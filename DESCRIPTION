@@ -2,12 +2,12 @@ Package: TTT
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Tim",
+           family = "Mirus",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           email = "tim.mirus@stud.uni-regensburg.de",
+           )
+Description: Toolbox for Spatial Transcriptomics data analysis. Integrating the sparse fused lasso for data smoothing and enrichment and clustering functions for ST data.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to
     pick a license
 Encoding: UTF-8
@@ -15,4 +15,4 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0
 biocViews:
-Depends: EBImage
+Depends: EBImage, genlasso, parallel
