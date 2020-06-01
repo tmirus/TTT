@@ -20,14 +20,22 @@
 #' @export
 
 process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE){
+  if(is.character(counts)){
+    if(file.exists(counts)){
+      counts <- as.matrix(read.table(counts))
+      if(!is.numeric(counts)){
+        stop("An error occurred while reading the counts matrix. Try reading it manually and pass it as parameter.")
+      }
+    }
+  }
   # check input parameters
   if(!is.matrix(counts)){
     stop("counts needs to be supplied as matrix")
   }
-  if(!is.numeric(a) || any(counts < 0)){
+  if(!is.numeric(counts) || any(counts < 0)){
     stop("counts must be a non-negative numeric matrix")
   }
-  if(nrow(counts) >= ncol(counts) && !force){
+  if(nrow(counts) >= ncol(counts) && !force_counts){
     stop("There seem to be more spots than genes. Please check matrix
          orientation or set force_counts = TRUE to use the data as it is.")
   }
@@ -49,7 +57,7 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
       stop("One or more spots are missing spatial information.")
     }
   }else{
-    if(! grep(pattern=split_by, x = rownames(counts)) == 1:nrow(counts)){
+    if(! all(grep(pattern=separate_by, x = rownames(counts)) == 1:nrow(counts))){
       stop("Splitting character split_by does not seem to be present in all spot names.")
     }
   }
@@ -78,12 +86,12 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
     coords1 <- as.numeric(sapply(ids.parts, function(x){x[[1]]}))
     coords2 <- as.numeric(sapply(ids.parts, function(x){x[[2]]}))
     
-    if(any(is.na(c(coords1,coords2))){
+    if(any(is.na(c(coords1,coords2)))){
       stop("rownames of counts could not be converted to coordinates. Make sure the rownames
            conform to the pattern {coord1}{split_by}{coord2} or provide an ids matrix
            mapping barcodes to spatial positions")
     }
-    if(any(c(coord1, coords2) < 0)){
+    if(any(c(coords1, coords2) < 0)){
       stop("Invalid ids extracted from rownames. Coordinates must be >= 0.")
     }
     
