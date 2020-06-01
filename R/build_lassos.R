@@ -13,11 +13,25 @@
 #' @export
 
 build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,ncores=8,gamma=1){
-    # building the lasso model for each gene individually with ncores processes in parallel
-    lasso.data <- mclapply(colnames(counts_matrix),
+    # select genes randomly for each thread to balance the load
+    genes <- colnames(counts_matrix)
+    gene_list <- vector(mode = "list", length = ncores)
+
+    if(ncores > 1){
+        genes.per.thread <- as.integer(ncol(counts_matrix) / ncores) 
+        for(i in 1:(ncores-1)){
+            indices <- sample(length(genes), genes.per.thread, replace = FALSE)
+            gene_list[[i]] <- genes[indices]
+            genes <- genes[-indices]
+        }
+    }
+    gene_list[[ncores]] <- genes
+
+    # building the lasso model with ncores processes in parallel
+    lasso.data <- mclapply(seq_len(ncores),
                            function(x) 
                                fused_lasso_complete_fixed_gamma(
-                                   counts_matrix = counts_matrix[, x, drop=F],
+                                   counts_matrix = counts_matrix[, gene_list[[x]], drop=F],
                                    ids_table = coords_table,
                                    name = paste(name,x,sep='_'),
                                    output_folder = output_folder,
