@@ -16,7 +16,7 @@
 #' @return NULL, plots to files
 #' @export
 
-plot_enrichment_clustering <- function(counts, ids, img, clustering.list, filepath, filename, spatial.file.prefix = NULL, spot.cluster.names = NULL){
+plot_enrichment_clustering <- function(counts, ids, img, clustering.list, filepath, filename, spatial.file.prefix = NULL, spot.cluster.names = NULL, nx = 35, ny = 33, ox = -1000/70, oy = 1000/32){
     theme_transparent <- theme(
     panel.background = element_rect(fill = "transparent"), # bg of the panel
     plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
@@ -89,8 +89,8 @@ plot_enrichment_clustering <- function(counts, ids, img, clustering.list, filepa
     }
 
     pdf(filename)
-    plot(spatial_plot(colnames(enrichment.mat), ids, names(col.vec), "", FALSE, NULL))
-    plot(spatial_plot(colnames(enrichment.mat), ids, names(col.vec), "", TRUE, img))
+    plot(spatial_plot(colnames(enrichment.mat), ids, names(col.vec), "", NULL))
+    plot(spatial_plot(colnames(enrichment.mat), ids, names(col.vec), "", img))
     if(!plot.cols){
         heatmap3(enrichment.mat, Colv=NA, Rowv = NA, col = c("blue", "yellow"), scale = "none", RowSideColors = term.col.vec)
     }else{

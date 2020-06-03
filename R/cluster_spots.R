@@ -21,7 +21,7 @@
 #' 3) spot.clustering: clustering information for spots in enrichment.mat
 #' 4) term.clustering: clustering information for terms in enrichment.mat
 #' 5) term.clusters: list containing for each term cluster a vector of terms belonging to that cluster
-#' @export
+
 
 cluster_spots <- function(counts, spot.enrichments = NULL, term.cutoff = 10, spot.cutoff = 1, n.cluster.spots = 6, n.cluster.terms = 6, n.cores = 4, verbose = TRUE, output_folder = NULL, method = 'normal'){
     if(is.null(spot.enrichments)){
