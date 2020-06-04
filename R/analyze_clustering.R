@@ -1,8 +1,9 @@
 #' @export
-analyze_clustering <- function(counts, ids, clustering.info, specificity.thershold = 0.8){
+analyze_clustering <- function(counts, ids, clustering.info, specificity.threshold = 0.9, sig.level = 0.0001){
     counts <- counts[rownames(clustering.info$scores),]
     clustering <- clustering.info$clustering
 
+    # find cluster-specific genes by calculating total RNA per cluster and gene
     cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
     colnames(cluster.libs) <- colnames(counts)
     rownames(cluster.libs) <- unique(clustering)
@@ -12,12 +13,10 @@ analyze_clustering <- function(counts, ids, clustering.info, specificity.thersho
     }
 
     specific <- sapply(colnames(cluster.libs), function(x){
-        #print(x)
         if(! sum(cluster.libs[,x]) > 0) return(-1)
         for(i in 1:nrow(cluster.libs)){
-            #print(i)
-            if(cluster.libs[i,x] / sum(cluster.libs[,x]) > specificity.thershold){
-                return(i)
+            if(cluster.libs[i,x] / sum(cluster.libs[,x]) > specificity.threshold){
+                return(as.numeric(rownames(cluster.libs)[i]))
             }
         }
         return(-1)
@@ -47,10 +46,10 @@ analyze_clustering <- function(counts, ids, clustering.info, specificity.thersho
     for(cl1 in rownames(cluster.libs)){
         genes <- c()
         for(cl2 in rownames(cluster.libs)){
-            genes <- c(genes, names(test.results[[cl1]][[cl2]])[which(test.results[[cl1]][[cl2]] < 0.05)])
+            genes <- c(genes, names(test.results[[cl1]][[cl2]])[which(test.results[[cl1]][[cl2]] < sig.level)])
         }
         genes <- unique(genes)
-        gene.mat <- matrix(0, nrow = nrow(cluster.libs)-1, ncol = length(genes))
+        gene.mat <- matrix(1, nrow = nrow(cluster.libs)-1, ncol = length(genes))
         rownames(gene.mat) <- rownames(cluster.libs)[-which(rownames(cluster.libs) == cl1)]
         colnames(gene.mat) <- genes
         for(cl2 in rownames(gene.mat)){

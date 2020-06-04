@@ -1,3 +1,4 @@
+#' @export
 cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25, verbose = FALSE){
 	counts <- t(counts)
 	score.mat <- matrix(0, ncol(counts), ncol(counts))
@@ -14,11 +15,6 @@ cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25, verbose = 
 			score.mat[j,i] <- score
 		}
 	}
-
-    d <- dist(score.mat, "manhattan")
-    tree <- hclust(d, "single")
-
-    score.mat <- score.mat[tree$order, tree$order]
 
     clustering <- kmeans(score.mat, nc)$cluster
 
