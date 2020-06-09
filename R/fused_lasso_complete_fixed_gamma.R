@@ -56,16 +56,15 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
         
         # contains the model fit ratio (part of BIC)
         lls_set <- append(lls_set,min(BIC_list[,5]))
-        cat("x")
   	  }else{
-        cat("\ny")
   		  to.remove <- c(to.remove, which(gene_list == i))
   	  }
+      #cat("x")
     }
+    #cat("\n")
 
     # if any genes failed, remove their names
 	  if(length(to.remove)>0){
-      print("removing...")
       # if all genes are removed, return empty list
       if(length(to.remove) < length(gene_list)){
         colnames(tmp_fits_set) <- gene_list[-to.remove]
