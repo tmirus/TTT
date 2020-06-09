@@ -18,10 +18,11 @@
 #' is in the lower right corner and on the x-axis (left to right) there are more spots than on the y-axis.
 #' @export
 
-remove_background <- function(img, nx = 35, ny=33, ids, names, threshold = 0.7){
+remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7){
   # reduce to one pixel per spot
   img <- EBImage::channel(img, "gray")
   img.reduced <- EBImage::resize(img, w=nx,h=ny)
+  names <- rownames(counts)
   
   # blur to reduce the risk of removing spots within tissue
   for(x in 1:nx){
@@ -74,8 +75,20 @@ remove_background <- function(img, nx = 35, ny=33, ids, names, threshold = 0.7){
     spots <- names(spots)[spots]
     spots.to.keep <- spots
   }
-  ids <- ids[spots,]
-  ids <- clean_ids(ids)
-  spots.to.keep <- rownames(ids)
-  return(list(spots.to.keep = spots.to.keep, image = img))
+  ids.reduced <- ids[spots,]
+  ids.reduced <- clean_ids(ids.reduced)
+  spots.to.keep <- rownames(ids.reduced)
+
+  tsne <- Rtsne(counts, remove_duplicates = F)$Y
+  clustering <- kmeans(tsne, 10)$cluster
+  names(clustering) <- rownames(counts)
+
+  clusters.to.keep <- c()
+  for(cl in unique(clustering)){
+    if(sum(names(clustering[clustering == cl]) %in% spots.to.keep) > 0.75 * length(which(clustering == cl))){
+      clusters.to.keep <- c(clusters.to.keep, names(clustering[clustering == cl]))
+    }
+  }
+
+  return(list(spots.to.keep = spots.to.keep, spots.keep.clustering = clusters.to.keep, image = img))
 }
