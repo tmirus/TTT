@@ -79,7 +79,7 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7)
   ids.reduced <- clean_ids(ids.reduced)
   spots.to.keep <- rownames(ids.reduced)
 
-  tsne <- Rtsne(counts, remove_duplicates = F)$Y
+  tsne <- Rtsne(counts, check_duplicates = F)$Y
   clustering <- kmeans(tsne, 10)$cluster
   names(clustering) <- rownames(counts)
 
