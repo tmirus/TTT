@@ -1,5 +1,5 @@
 #' @export
-analyze_clustering <- function(counts, ids, clustering.info, specificity.threshold = 0.9, sig.level = 0.0001){
+analyze_clustering <- function(counts, ids, clustering.info, specificity.threshold = 0.9, sig.level = 0.01){
     counts <- counts[rownames(clustering.info$scores),]
     clustering <- clustering.info$clustering
 
@@ -65,5 +65,25 @@ analyze_clustering <- function(counts, ids, clustering.info, specificity.thresho
         gene.lists[[cl1]] <- sort(gene.scores)
     }
 
-    return(list(specific, gene.lists))
+    all.genes <- unique(unlist(sapply(gene.lists, function(x){names(x)}), use.names = F))
+    clusters <- sort(unique(clustering))
+    gene.table <- foreach(g = all.genes, .combine = 'rbind') %do% {
+        cluster.values <- c()
+        for(cl in clusters){
+            if(g %in% names(gene.lists[[cl]])){
+                cluster.values <- c(cluster.values, gene.lists[[cl]][g])
+            }else{
+                cluster.values <- c(cluster.values, 1)
+            }
+        }
+        return(cluster.values)
+    }
+    gene.table <- as.data.frame(gene.table)
+    colnames(gene.table) <- clusters
+    rownames(gene.table) <- all.genes
+
+    gene.table <- gene.table[order(rowMeans(gene.table)),]
+
+
+    return(list(specific, gene.lists, gene.table))
 }
