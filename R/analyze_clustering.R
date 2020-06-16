@@ -1,5 +1,5 @@
 #' @export
-analyze_clustering <- function(counts, ids, clustering.info, specificity.threshold = 0.9, sig.level = 0.01){
+analyze_clustering <- function(counts, ids, clustering.info, specificity.threshold = 0.9, sig.level = 0.05){
     counts <- counts[rownames(clustering.info$scores),]
     clustering <- clustering.info$clustering
 
@@ -24,6 +24,8 @@ analyze_clustering <- function(counts, ids, clustering.info, specificity.thresho
 
     names(specific) <- colnames(cluster.libs)
     specific <- specific[-which(specific < 0)]
+
+	counts <- log2(counts + 1)
 
     # implement testing with multtest for differentially expressed genes for each cluster
     test.results <- list()
