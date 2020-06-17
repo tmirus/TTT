@@ -39,6 +39,7 @@ build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,nc
                                ),
                            mc.cores = ncores
                            )
+    print(str(lasso.data))
     
     # reconstruct the counts matrix and store additional information 
     # returned by fused_lasso_complete_fixed_gamma

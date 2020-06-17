@@ -1,6 +1,6 @@
 #' @export
 cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25, verbose = TRUE, ncores = 4){
-	counts <- t(apply(log2(counts+1), 2, function(x) {(x-mean(x)) / sd(x)}))
+	counts <- t(apply(counts, 2, function(x) {(x-mean(x)) / sd(x)}))
 	#counts <- t(counts)
 
 	base = exp(-alpha)
