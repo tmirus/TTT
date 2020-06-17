@@ -30,6 +30,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       for (j in 1:nrow(counts_matrix)){
           tmp_matrix[ids_table[rownames(counts_matrix)[j],1],ids_table[rownames(counts_matrix)[j],2]] <- counts_matrix[j,i]
       }
+      #print(summary(as.vector(tmp_matrix)))
 
       tmp_lasso <- fusedlasso2d(tmp_matrix,gamma = gamma)
       
@@ -38,13 +39,14 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       # the model building failed; skip those genes
 	    if(length(which.min(BIC_list[,4])) > 0){
         # retrieve lambda corresponding to minimal BIC
-        lambda_BIC <- BIC_list[which.min(BIC_list[,4])]
+        lambda_BIC <- BIC_list[which.min(BIC_list[,4]),2]
+        
         # retrieve the model corresponding to the lambda
         # coef_error catches truncation errors and 
         # uses a different but similar lambda
         fits <- coef_error(tmp_lasso, lambda=lambda_BIC)
         tmp_fit <- fits$beta
-        
+        print(sum(tmp_fit)) 
         # contains the count models (Y)
         tmp_fits_set <- cbind(tmp_fits_set,tmp_fit)
         
@@ -62,7 +64,6 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       #cat("x")
     }
     #cat("\n")
-
     # if any genes failed, remove their names
 	  if(length(to.remove)>0){
       # if all genes are removed, return empty list

@@ -11,7 +11,7 @@ coef_error <- function(lasso,lambda){
         new_lambda <- as.numeric(strsplit(strsplit(tmp[1],split='truncated at ')[[1]][2],split=',')[[1]][1])
         new_lambda <- new_lambda + 0.001
         warning(paste(lambda,' was not possible due to truncation, lambda used = ',new_lambda,sep = ''))
-        tmp <- coef(lasso, lambda=new_lambda)
+        tmp <- coef_error(lasso, lambda=new_lambda)
     }
     return(tmp)
 }
