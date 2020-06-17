@@ -25,45 +25,31 @@ analyze_clustering <- function(counts, ids, clustering.info, specificity.thresho
     names(specific) <- colnames(cluster.libs)
     specific <- specific[-which(specific < 0)]
 
-	counts <- log2(counts + 1)
+	#counts <- log2(counts + 1)
 
     # implement testing with multtest for differentially expressed genes for each cluster
     test.results <- list()
     for(cl1 in rownames(cluster.libs)){
-        test.results[[cl1]] <- list()
-        for(cl2 in rownames(cluster.libs)){
-            if(cl1 == cl2) next
-            temp.counts <- t(counts[c(which(clustering == cl1),which(clustering == cl2)),])
-            labs <- c(rep(0,length(which(clustering == cl1))), rep(1,length(which(clustering == cl2))))
-            
-            t.scores <- mt.teststat(temp.counts, labs, test = "t")
-            p.vals <- 2 * pt(abs(t.scores), length(labs) - 2, lower.tail = FALSE)
-            p.vals <- p.adjust(p.vals, method = "BH")
-            names(p.vals) <- colnames(cluster.libs)
-            test.results[[cl1]][[cl2]] <- p.vals
-        }
+        temp.counts <- t(counts[c(which(clustering == cl1),which(clustering != cl1)),])
+        labs <- c(rep(0,length(which(clustering == cl1))), rep(1,length(which(clustering != cl1))))
+        t.scores <- mt.teststat(temp.counts, labs, test = "t")
+        p.vals <- 2 * pt(abs(t.scores), length(labs) - 2, lower.tail = FALSE)
+        p.vals <- p.adjust(p.vals, method = "BH")
+        names(p.vals) <- colnames(cluster.libs)
+        test.results[[cl1]] <- p.vals
     }
 
     gene.lists <- list()
     for(cl1 in rownames(cluster.libs)){
-        genes <- c()
-        for(cl2 in rownames(cluster.libs)){
-            genes <- c(genes, names(test.results[[cl1]][[cl2]])[which(test.results[[cl1]][[cl2]] < sig.level)])
+        gene.scores <- test.results[[cl1]][which(test.results[[cl1]] < as.numeric(sig.level))]
+        names(gene.scores) <- names(test.results[[cl1]])[which(test.results[[cl1]] < as.numeric(sig.level))]
+
+        if(any(is.na(gene.scores))){
+            gene.scores[is.na(gene.scores)] <- 1
         }
-        genes <- unique(genes)
-        gene.mat <- matrix(1, nrow = nrow(cluster.libs)-1, ncol = length(genes))
-        rownames(gene.mat) <- rownames(cluster.libs)[-which(rownames(cluster.libs) == cl1)]
-        colnames(gene.mat) <- genes
-        for(cl2 in rownames(gene.mat)){
-            gene.mat[cl2,] <- test.results[[cl1]][[cl2]][genes]
+        if(any(is.nan(gene.scores))){
+            gene.scores[is.nan(gene.scores)] <- 1
         }
-        if(any(is.na(gene.mat))){
-            gene.mat[is.na(gene.mat)] <- 1
-        }
-        if(any(is.nan(gene.mat))){
-            gene.mat[is.nan(gene.mat)] <- 1
-        }
-        gene.scores <- colMeans(gene.mat)
         gene.lists[[cl1]] <- sort(gene.scores)
     }
 
@@ -84,7 +70,14 @@ analyze_clustering <- function(counts, ids, clustering.info, specificity.thresho
     colnames(gene.table) <- clusters
     rownames(gene.table) <- all.genes
 
-    gene.table <- gene.table[order(rowMeans(gene.table)),]
+    to.remove <- c()
+    for(i in 1:nrow(gene.table)){
+        if(min(gene.table[i,]) > sig.level){
+            to.remove <- c(to.remove, i)
+        }
+    }
+    if(length(to.remove) > 0)
+        gene.table <- gene.table[-to.remove,]
 
 
     return(list(specific, gene.lists, gene.table))
