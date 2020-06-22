@@ -5,7 +5,13 @@
 \title{process input data from ST pipeline to make sure they conform
 to the format the package expects}
 \usage{
-process_input(counts, ids = NULL, separate_by = "x", force_counts = FALSE)
+process_input(
+  counts,
+  ids = NULL,
+  separate_by = "x",
+  force_counts = FALSE,
+  dup.sep = "_"
+)
 }
 \arguments{
 \item{counts}{non-negative numeric matrix containing gene counts,

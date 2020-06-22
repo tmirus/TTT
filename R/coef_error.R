@@ -6,8 +6,9 @@
  
 coef_error <- function(lasso,lambda){
     tmp <- try(coef(lasso, lambda=lambda),silent = TRUE)
+    # if an error occured catch it, extract failed lambda from error message and recursively call 
+    # coeff_error with slightly different lambda
     if (typeof(tmp)=='character'){
-	    #warning("error occured (truncation)")
         new_lambda <- as.numeric(strsplit(strsplit(tmp[1],split='truncated at ')[[1]][2],split=',')[[1]][1])
         new_lambda <- new_lambda + 0.001
         warning(paste(lambda,' was not possible due to truncation, lambda used = ',new_lambda,sep = ''))

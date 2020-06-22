@@ -2,12 +2,9 @@
 
 export(analyze_clustering)
 export(build_lassos)
-export(calculate_spot_enrichments)
 export(cluster_counts_OL)
-export(plot_enrichment_clustering)
+export(plot_adjustment)
 export(process_input)
-export(reduce_term_mat)
 export(remove_background)
 export(spatial_plot)
-export(visualize_clustering)
 export(visualize_genes)

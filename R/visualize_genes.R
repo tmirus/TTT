@@ -1,3 +1,18 @@
+#' This function visualizes the results of the clustering and analysis using spatial plots and heatmaps
+#'
+#' @param counts non-negative numeric matrix containing gene counts, 
+#' rows correspond to spots, columns correspond to genes
+#' @param ids data frame or matrix assigning spatial coordinates to the spots
+#' @param img image of ST slide, read using EBImage::readImage()
+#' @param clustering numeric vector, same order as rownames(counts), assigning each spot a cluster
+#' @param gene.info list as returned by analyze_clustering()
+#' @param filepath character, directory in which to save plots; if not specified, plots will not be saved to disk
+#' @param plot.params plotting parameters as returned by plot_adjustment()
+#' @return list containing 4 plots (ggplot objects):\cr
+#' 1) spatial.cluster - overlay of clustering on ST image
+#' 2) spatial.cluster.legend - spatial clustering, without ST image in background, but with legend
+#' 3) heatmap.plt - simplified heatmap, depicting mean expression of all interesting genes in the different clusters
+#' 4) heatmap.full.plt - heatmap visualizing expression of all interesting genes in all spots
 #' @export
 visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = NULL, plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)){
     spatial.cluster.legend <- spatial_plot(rownames(counts), ids, clustering, NULL, "discrete", plot.params)
@@ -23,13 +38,21 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
     for(i in 1:length(all.genes)){
         g <- all.genes[i]
          for(j in 1:nrow(heatmap.counts)){
-             heatmap.full.df[(i-1)*nrow(heatmap.counts)+j,] <- c(as.character(j), g, as.character(heatmap.counts[j, g]))
+             heatmap.full.df[(i-1)*nrow(heatmap.counts)+j,] <- c(
+								 as.character(j), 
+								 g, 
+								 as.character(heatmap.counts[j, g])
+	     )
          }
     }
 
-    gene.cluster <- hclust(dist(t(heatmap.counts[,all.genes]), "euclidean"), "complete")
+    gene.cluster <- hclust(dist(t(heatmap.counts[,all.genes]), "euclidean"), "average")
     gene.order <- gene.cluster$order
     genes <- all.genes[gene.order]
+
+    spot.cluster <- hclust(dist(heatmap.counts[,all.genes], "euclidean"), "average")
+    spot.order <- spot.cluster$order
+    spots <- rownames(heatmap.counts)[spot.order]
     
     heatmap.df <- as.data.frame(heatmap.df)
     colnames(heatmap.df) <- c("cluster", "gene", "expression")
@@ -41,10 +64,23 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
     heatmap.full.df$expression <- as.numeric(as.character(heatmap.full.df$expression))
     heatmap.full.df$spot <- as.numeric(as.character(heatmap.full.df$spot))
 
-    heatmap.plt <- ggplot(heatmap.df, aes(x=cluster, y=gene, fill = expression)) + geom_tile() + theme(axis.text.y = element_blank()) + xlab("cluster") + ylab("gene") +
-    scale_fill_gradient(low = "blue", high = "yellow") + scale_y_discrete(limits = genes)
-    heatmap.full.plt <- ggplot(heatmap.full.df, aes(x=spot, y=gene, fill = expression)) + geom_tile() + theme(axis.text.y = element_blank()) + xlab("spot") + ylab("gene") +
-    scale_fill_gradient(low = "blue", high = "yellow") + scale_y_discrete(limits = genes)
+    heatmap.plt <- ggplot(heatmap.df, aes(x=cluster, y=gene, fill = expression)) + 
+	    		geom_tile() + 
+			theme(axis.text.y = element_blank()) + 
+			xlab("cluster") + 
+			ylab("gene") +
+    			scale_fill_gradient(low = "blue", mid = "black", high = "yellow") + 
+			scale_y_discrete(limits = genes)
+    
+    heatmap.full.plt <- ggplot(heatmap.full.df, 
+			       aes(x=spot, y=gene, fill = expression)) + 
+			geom_tile() + 
+			theme(axis.text.y = element_blank()) + 
+			xlab("spot") + 
+			ylab("gene") +
+    			scale_fill_gradient(low = "blue", mid = "black", high = "yellow") + 
+			scale_y_discrete(limits = genes) +
+			scale_x_discrete(limits = spots)
 
     if(!is.null(filepath) && !dir.exists(filepath)){
         dir.create(filepath, recursive = TRUE)
@@ -61,17 +97,5 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
 
     cluster.plots <- list(spatial = spatial.cluster, spatial.no_img = spatial.cluster.legend, heatmap = heatmap.plt, heatmap.full = heatmap.full.plt)
 
-    # if(!is.null(filepath)){
-    #     pdf(paste(filepath, "spatial_genes.pdf", sep = "/"), width = 10, height = 10)
-    #     for(g in all.genes){
-    #         col.vec <- rep(0, nrow(counts))
-    #         for(cl in unique(clustering)){
-    #             col.vec[which(clustering == cl)] <- -log10(gene.info[[2]][[as.character(cl)]][g])
-    #         }
-    #         p <- spatial_plot(rownames(counts), ids, counts[,g,drop=F], img, mode = "continuous", nx, ny, ox, oy) + geom_point(aes(col = col.vec))
-    #             plot(p)
-    #     }
-    #     dev.off()
-    # }
-    return(list(cluster.plots = cluster.plots))
+    return(cluster.plots)
 }

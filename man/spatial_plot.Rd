@@ -10,10 +10,7 @@ spatial_plot(
   cluster,
   img = NULL,
   mode = "discrete",
-  nx = 35,
-  ny = 33,
-  ox = -1000/70,
-  oy = 1000/32
+  plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)
 )
 }
 \arguments{
@@ -31,13 +28,7 @@ how this information is used is determined by the parameter mode}
 \item{mode}{character specifying how the information in 'cluster' should be visualized. Must be one of 'discrete' or 'continuous'.
 "discrete" will be encoded in colors (e.g. clustering information), 'continuous' will be displayed by size (e.g. amount of RNA)}
 
-\item{nx}{number of spots in horizontal direction}
-
-\item{ny}{number of spots in vertical direction}
-
-\item{ox}{numeric, offset of first and last spot from the edges of the image in x-direction, may be positive or negative}
-
-\item{oy}{numeric, offset of first and last spot from the edges of the image in y-direction, may be positive or negative}
+\item{plot.params}{list of parameters needed for good spatial visualization as returned by plot_adjustment}
 }
 \value{
 ggplot2 object (plot)

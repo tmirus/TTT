@@ -4,13 +4,13 @@
 \alias{calc_BICs}
 \title{Returns useful information about a fusedlasso model fit}
 \usage{
-calc_BICs(full_model, j)
+calc_BICs(full_model)
 }
 \arguments{
 \item{full_model}{takes an object of the class fusedlasso}
 }
 \value{
-returns a vector consisting of the df, rss, BIC and ratio of explained variation dor each lambda.
+returns a vector consisting of the df, lambda, rss, BIC and ratio of explained variation dor each lambda.
 }
 \description{
 Returns useful information about a fusedlasso model fit

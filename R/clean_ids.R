@@ -8,27 +8,40 @@
 
 clean_ids <- function(ids) {
   to.remove <- c()
+  # iterate over all spots in ids
   for(i in 1:nrow(ids)) {
     rmv <- TRUE
-    x <- ids[i,2]
-    y <- ids[i,1]
-    neighbours <- intersect(which(ids[,2] %in% ((x-1):(x+1))), which(ids[,1] %in% ((y-1):(y+1))))
+    x <- ids[i,"X"]
+    y <- ids[i,"Y"]
+    # find spots connected to spot i
+    neighbours <- intersect(
+	which(ids[,"X"] %in% ((x-1):(x+1))), 
+	which(ids[,"Y"] %in% ((y-1):(y+1)))
+    )
+    # three (+ self) directly connected spots are enough to keep
+    # the current spot
     if(length(neighbours) > 4) {
       rmv = FALSE
       next
     }else{
+      # any neighbour must have 4 (+ self) direct neighbours,
+      # otherwise the spot will be removed
       for(n in neighbours){
-        x <- ids[n,2]
-        y <- ids[n,1]
-        n_neighbours <- intersect(which(ids[,2] %in% ((x-1):(x+1))), which(ids[,1] %in% ((y-1):(y+1))))
+        x <- ids[n,"X"]
+        y <- ids[n,"Y"]
+        n_neighbours <- intersect(
+		which(ids[,"X"] %in% ((x-1):(x+1))), 
+		which(ids[,"Y"] %in% ((y-1):(y+1))))
         if(length(n_neighbours) > 5) {
           rmv = FALSE
           break
         }
       }
     }
-    if(rmv) to.remove <- c(to.remove, i)
+    if(rmv) 
+	    to.remove <- c(to.remove, i)
   }
-  if(length(to.remove)>0) ids <- ids[-to.remove,]
+  if(length(to.remove)>0) 
+	  ids <- ids[-to.remove,]
   return(ids)
 }

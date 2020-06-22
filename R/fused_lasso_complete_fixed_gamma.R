@@ -22,6 +22,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
     # not all genes can be used
     to.remove <- c()
 
+    # serial calculation of models for all genes in counts_matrix
     for (k in seq_len(length(gene_list))) {
       i <- gene_list[k]
       # create a 2D matrix (x and y information) for each gene for use with genlasso
@@ -30,15 +31,17 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       for (j in 1:nrow(counts_matrix)){
           tmp_matrix[ids_table[rownames(counts_matrix)[j],1],ids_table[rownames(counts_matrix)[j],2]] <- counts_matrix[j,i]
       }
-      #print(summary(as.vector(tmp_matrix)))
 
+      # full solution path calculation
       tmp_lasso <- fusedlasso2d(tmp_matrix,gamma = gamma)
       
+      # calculate BICs for all possible models
       BIC_list <- calc_BICs(tmp_lasso)
+
       # if there is no model with minimal BIC
       # the model building failed; skip those genes
-	    if(length(which.min(BIC_list[,4])) > 0){
-        # retrieve lambda corresponding to minimal BIC
+      if(length(which.min(BIC_list[,4])) > 0){
+      	# retrieve lambda corresponding to minimal BIC
         lambda_BIC <- BIC_list[which.min(BIC_list[,4]),2]
         
         # retrieve the model corresponding to the lambda
@@ -46,7 +49,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
         # uses a different but similar lambda
         fits <- coef_error(tmp_lasso, lambda=lambda_BIC)
         tmp_fit <- fits$beta
-        print(sum(tmp_fit)) 
+
         # contains the count models (Y)
         tmp_fits_set <- cbind(tmp_fits_set,tmp_fit)
         
@@ -58,14 +61,12 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
         
         # contains the model fit ratio (part of BIC)
         lls_set <- append(lls_set,min(BIC_list[,5]))
-  	  }else{
-  		  to.remove <- c(to.remove, which(gene_list == i))
-  	  }
-      #cat("x")
+      }else{
+  	to.remove <- c(to.remove, which(gene_list == i))
+      }
     }
-    #cat("\n")
     # if any genes failed, remove their names
-	  if(length(to.remove)>0){
+    if(length(to.remove)>0){
       # if all genes are removed, return empty list
       if(length(to.remove) < length(gene_list)){
         colnames(tmp_fits_set) <- gene_list[-to.remove]
@@ -73,7 +74,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
         return(list())
       }
     }else{
-		  colnames(tmp_fits_set) <- gene_list
+      colnames(tmp_fits_set) <- gene_list
     }
     return(list(counts = tmp_fits_set, #fits = fits_set, 
                 BICs = BICs_set, 

@@ -12,7 +12,7 @@
 #' 2) ids - id data frame that assigns spot identifiers to locations on the grid
 #' @export
 
-build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,ncores=8,gamma=1){
+build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,ncores=4,gamma=1){
     # select genes randomly for each thread to balance the load
     genes <- colnames(counts_matrix)
     gene_list <- vector(mode = "list", length = ncores)
@@ -39,7 +39,6 @@ build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,nc
                                ),
                            mc.cores = ncores
                            )
-    print(str(lasso.data))
     
     # reconstruct the counts matrix and store additional information 
     # returned by fused_lasso_complete_fixed_gamma

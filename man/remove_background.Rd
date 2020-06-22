@@ -5,7 +5,7 @@
 \title{remove background spots (not covered by tissue) from ST data based on tissue image.
 Manual checking of the result and adjustment of the threshold is needed.}
 \usage{
-remove_background(img, nx = 35, ny = 33, ids, names, threshold = 0.7)
+remove_background(img, nx = 35, ny = 33, ids, counts, threshold = 0.7)
 }
 \arguments{
 \item{img}{image of the ST slide, cropped to the spot area. image read by EBimage::readImage()}
@@ -16,7 +16,8 @@ remove_background(img, nx = 35, ny = 33, ids, names, threshold = 0.7)
 
 \item{ids}{data frame assigning barcodes / spot names to spatial coordinates}
 
-\item{names}{barcodes / names of the spots in the order in which they are stored in the counts matrix}
+\item{counts}{non-negative numeric matrix containing gene counts,
+rows correspond to spots, columns correspond to genes}
 
 \item{threshold}{relative brightness. spots above this threshold are discarded}
 }
@@ -24,6 +25,7 @@ remove_background(img, nx = 35, ny = 33, ids, names, threshold = 0.7)
 list containing two entries\cr
 \enumerate{
 \item spots.to.keep - vector of barcodes / spot names of the spots that should not be removed
+\item spots.keep.clustering - vector of barcodes / spot names of the spots that should not be removed based on clustering in addition to image analysis
 \item image - image showing the areas that are retained.
 typically framed by spots for which there exist no measurements. Depending on whether these are contained
 in the image or not, different values need to be chosen for nx, ny. If they are included, the

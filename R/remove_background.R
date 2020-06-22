@@ -11,7 +11,8 @@
 #' @details nx and ny depend on the cropping of the image. the area of measurements in an ST experiment is
 #' @return list containing two entries\cr
 #' 1) spots.to.keep - vector of barcodes / spot names of the spots that should not be removed
-#' 2) image - image showing the areas that are retained.
+#' 2) spots.keep.clustering - vector of barcodes / spot names of the spots that should not be removed based on clustering in addition to image analysis
+#' 3) image - image showing the areas that are retained.
 #' typically framed by spots for which there exist no measurements. Depending on whether these are contained 
 #' in the image or not, different values need to be chosen for nx, ny. If they are included, the 
 #' default values of nx=35 and ny=33 are sensible. If not, it should be nx=33 and ny=31.\cr
@@ -80,10 +81,13 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7)
   ids.reduced <- clean_ids(ids.reduced)
   spots.to.keep <- rownames(ids.reduced)
 
+  # tSNE embedding
   tsne <- Rtsne(counts, check_duplicates = F)$Y
-  clustering <- kmeans(tsne, 10)$cluster
+  # create comparatively large number of clusters
+  clustering <- kmeans(tsne, 15)$cluster
   names(clustering) <- rownames(counts)
 
+  # keep all clusters with a certain amount of spots in spots.to.keep
   clusters.to.keep <- c()
   for(cl in unique(clustering)){
     if(sum(names(clustering[clustering == cl]) %in% spots.to.keep) > 0.75 * length(which(clustering == cl))){
@@ -91,5 +95,9 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7)
     }
   }
 
-  return(list(spots.to.keep = spots.to.keep, spots.keep.clustering = clusters.to.keep, image = img))
+  return(list(
+	spots.to.keep = spots.to.keep, 
+	spots.keep.clustering = clusters.to.keep, 
+	image = img
+	))
 }

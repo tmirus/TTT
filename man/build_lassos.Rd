@@ -9,7 +9,7 @@ build_lassos(
   coords_table,
   name,
   output_folder = NULL,
-  ncores = 8,
+  ncores = 4,
   gamma = 1
 )
 }
