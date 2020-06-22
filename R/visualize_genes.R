@@ -1,7 +1,7 @@
 #' @export
-visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = NULL, nx = 35, ny = 33, ox = -1000/70, oy = 1000/32){
-    spatial.cluster.legend <- spatial_plot(rownames(counts), ids, clustering, NULL, "discrete", nx, ny, ox, oy)
-    spatial.cluster <- spatial_plot(rownames(counts), ids, clustering, img, "discrete", nx, ny, ox, oy)
+visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = NULL, plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)){
+    spatial.cluster.legend <- spatial_plot(rownames(counts), ids, clustering, NULL, "discrete", plot.params)
+    spatial.cluster <- spatial_plot(rownames(counts), ids, clustering, img, "discrete", plot.params)
 
     #all.genes <- unique(unlist(sapply(gene.info[[2]], function(x){names(x)}), use.names = F))
     all.genes <- rownames(gene.info[[2]])

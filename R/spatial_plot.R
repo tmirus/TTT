@@ -9,14 +9,11 @@
 #' @param img EBImage image object the information will be plotted on; default NULL
 #' @param mode character specifying how the information in 'cluster' should be visualized. Must be one of 'discrete' or 'continuous'.
 #' "discrete" will be encoded in colors (e.g. clustering information), 'continuous' will be displayed by size (e.g. amount of RNA)
-#' @param nx number of spots in horizontal direction
-#' @param ny number of spots in vertical direction
-#' @param ox numeric, offset of first and last spot from the edges of the image in x-direction, may be positive or negative
-#' @param oy numeric, offset of first and last spot from the edges of the image in y-direction, may be positive or negative
+#' @param plot.params list of parameters needed for good spatial visualization as returned by plot_adjustment
 #' @return ggplot2 object (plot)
 #' @export 
 
-spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", nx = 35, ny = 33, ox = -1000/70, oy = 1000/32){
+spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)){
     theme_transparent <- theme(
         panel.background = element_rect(fill = "transparent"), # bg of the panel
         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
@@ -28,6 +25,11 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", nx =
         plot.title = element_blank(),
         axis.ticks = element_blank()
     )
+
+    nx <- plot.params$nx
+    ny <- plot.params$ny
+    ox <- plot.params$ox
+    oy <- plot.params$oy
  
     # standardize image size
     if(!is.null(img)){
