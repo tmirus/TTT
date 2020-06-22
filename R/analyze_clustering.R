@@ -1,5 +1,5 @@
 #' @export
-analyze_clustering <- function(counts, ids, clustering.info, specificity.threshold = 0.9, sig.level = 0.05){
+analyze_clustering <- function(counts, ids, clustering.info, sig.level = 0.05){
     counts <- counts[rownames(clustering.info$scores),]
     clustering <- clustering.info$clustering
 
