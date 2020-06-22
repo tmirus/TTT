@@ -5,7 +5,8 @@
 #' @param nx number of spots shown in the image on the horizontal axis
 #' @param ny number of spots shown in the image on the vertical axis
 #' @param ids data frame assigning barcodes / spot names to spatial coordinates
-#' @param names barcodes / names of the spots in the order in which they are stored in the counts matrix
+#' @param counts non-negative numeric matrix containing gene counts, 
+#' rows correspond to spots, columns correspond to genes
 #' @param threshold relative brightness. spots above this threshold are discarded
 #' @details nx and ny depend on the cropping of the image. the area of measurements in an ST experiment is
 #' @return list containing two entries\cr
