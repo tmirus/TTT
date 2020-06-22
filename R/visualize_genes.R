@@ -3,7 +3,8 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
     spatial.cluster.legend <- spatial_plot(rownames(counts), ids, clustering, NULL, "discrete", nx, ny, ox, oy)
     spatial.cluster <- spatial_plot(rownames(counts), ids, clustering, img, "discrete", nx, ny, ox, oy)
 
-    all.genes <- unique(unlist(sapply(gene.info[[2]], function(x){names(x)}), use.names = F))
+    #all.genes <- unique(unlist(sapply(gene.info[[2]], function(x){names(x)}), use.names = F))
+    all.genes <- rownames(gene.info[[2]])
     heatmap.mat <- matrix(0, nrow = length(all.genes), ncol = length(unique(clustering)))
     rownames(heatmap.mat) <- all.genes
     colnames(heatmap.mat) <- unique(clustering)

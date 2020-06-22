@@ -19,10 +19,10 @@
 #' 2) ids - barcode data frame assigning spatial positions to spots
 #' @export
 
-process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE){
+process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, dup.sep = "_"){
   if(is.character(counts)){
     if(file.exists(counts)){
-      counts <- as.matrix(read.table(counts))
+      counts <- as.matrix(read.table(counts, check.names = FALSE))
       if(!is.numeric(counts)){
         stop("An error occurred while reading the counts matrix. Try reading it manually and pass it as parameter.")
       }
@@ -115,6 +115,28 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
   if(!all(range(ids[,1]) == c(2, 32)) || !all(range(ids[,2]) == c(2,34)) ){
     stop("Could not adjust data to conform to package standards. Please check your input.")
   }
+
+  # deal with gene duplicates
+  #tic("remove duplicates")
+  #genes <- colnames(counts)
+  #split.genes <- strsplit(genes, dup.sep)
+  #gene.nodup <- paste(sapply(split.genes, function(x){x[-length(x)]}), sep = "")
+  #counts.fixed <- c()
+  #dup.genes <- gene.nodup[duplicated(gene.nodup)]
+  #genes.fixed <- c()
+  #for(i in 1:ncol(counts)){
+#	  if(gene.nodup[i] %in% dup.genes & !gene.nodup[i] %in% genes.fixed){
+#		  counts.fixed <- cbind(counts.fixed, rowSums(counts[,which(gene.nodup == gene.nodup[i])]))
+#		  genes.fixed <- c(genes.fixed, gene.nodup[i])
+#	  }else{
+#		  counts.fixed <- cbind(counts.fixed, counts[,i])
+#		  genes.fixed <- colnames(counts)[i]
+#	  }
+  #}
+  #print(dim(counts))
+  #counts <- counts.fixed
+  #print(dim(counts))
+  #toc()
   
   return(list(counts = counts, ids = ids))
 }
