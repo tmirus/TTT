@@ -14,7 +14,7 @@
 #' 3) dsg - differential genes reduced to genes that are also contained in 'specific'
 #' @export
 analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
-    counts <- counts[rownames(clustering.info$scores),]
+    #counts <- counts[rownames(clustering.info$scores),]
     #clustering <- clustering.info$clustering
 
     # find cluster-specific genes by calculating total RNA per cluster and gene
@@ -69,7 +69,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
 	}
 
 	p.vals <- sort(p.vals)
-        test.results[[cl1]] <- p.vals
+        test.results[[cl]] <- p.vals
     }
 
     # right now all.genes is actually all genes, but if a significance cutoff
@@ -87,8 +87,8 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
         for(cl in clusters){
 	    # if the gene is present in test results for the cluster add the value
 	    # else add 1
-            if(g %in% names(gene.lists[[cl]])){
-                cluster.values <- c(cluster.values, as.numeric(gene.lists[[cl]][g]))
+            if(g %in% names(test.results[[cl]])){
+                cluster.values <- c(cluster.values, as.numeric(test.results[[cl]][g]))
             }else{
                 cluster.values <- c(cluster.values, 1)
             }

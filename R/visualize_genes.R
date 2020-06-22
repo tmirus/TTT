@@ -69,7 +69,7 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
 			theme(axis.text.y = element_blank()) + 
 			xlab("cluster") + 
 			ylab("gene") +
-    			scale_fill_gradient(low = "blue", mid = "black", high = "yellow") + 
+    			scale_fill_gradient2(low = "blue", mid = "black", high = "yellow") + 
 			scale_y_discrete(limits = genes)
     
     heatmap.full.plt <- ggplot(heatmap.full.df, 
@@ -78,7 +78,7 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
 			theme(axis.text.y = element_blank()) + 
 			xlab("spot") + 
 			ylab("gene") +
-    			scale_fill_gradient(low = "blue", mid = "black", high = "yellow") + 
+    			scale_fill_gradient2(low = "blue", mid = "black", high = "yellow") + 
 			scale_y_discrete(limits = genes) +
 			scale_x_discrete(limits = spots)
 
