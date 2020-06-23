@@ -50,13 +50,21 @@ cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 
 	# cluster using pam with nc starting points
 	clustering <- pam(score.mat, nc)$clustering
 
-	# create tSNE plot
+	# create tSNE plots
     	tsne <- Rtsne(score.mat, check_duplicates = FALSE)
+	tsne.counts <- Rtsne(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:500],], check_duplicates = F)
+	
 	df <- data.frame(tsne$Y, clustering)
 	colnames(df) <- c("tSNE1", "tSNE2", "cluster")
 	df$cluster <- as.factor(df$cluster)
-	p <- ggplot(df, aes(x=tSNE1, y=tSNE2, col = cluster)) + geom_point()
 	
-	return(list(scores = score.mat, clustering = clustering, tsne = p))
+	df.counts <- data.frame(tsne.counts$Y, clustering)
+	colnames(df.counts) <- c("tSNE1", "tSNE2", "cluster")
+	df.counts$cluster <- as.factor(df.counts$cluster)
+
+	p1 <- ggplot(df, aes(x=tSNE1, y=tSNE2, col = cluster)) + geom_point()
+	p2 <- ggplot(df.counts, aes(x = tSNE1, y = tSNE2, col = cluster)) + geom_point()
+
+	return(list(scores = score.mat, clustering = clustering, tsne.scores = p1, tsne.counts = p2))
 }
 
