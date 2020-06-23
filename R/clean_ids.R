@@ -24,6 +24,7 @@ clean_ids <- function(ids) {
       rmv = FALSE
       next
     }else{
+      if(length(neighbours) > 0){
       # any neighbour must have 4 (+ self) direct neighbours,
       # otherwise the spot will be removed
       for(n in neighbours){
@@ -36,6 +37,7 @@ clean_ids <- function(ids) {
           rmv = FALSE
           break
         }
+      }
       }
     }
     if(rmv) 

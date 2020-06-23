@@ -95,6 +95,10 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7)
     }
   }
 
+  ids.reduced <- ids[clusters.to.keep,]
+  ids.reduced <- clean_ids(ids.reduced)
+  clusters.to.keep <- rownames(ids.reduced)
+
   return(list(
 	spots.to.keep = spots.to.keep, 
 	spots.keep.clustering = clusters.to.keep, 
