@@ -14,12 +14,14 @@
 #' default FALSE
 #' @param force_indices logical, in case the range of x and y indices is not the same as in the
 #' ST barcode files
+#' @param dub.sep character, optional; if duplicate gene names are distinguished by e.g. _1, _2
+#' at the end, pass dup.sep="_" to try to combine these columns
 #' @return list with two entries:\cr
 #' 1) counts - count matrix
 #' 2) ids - barcode data frame assigning spatial positions to spots
 #' @export
 
-process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, dup.sep = "_"){
+process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, dup.sep = NULL){
   if(is.character(counts)){
     if(file.exists(counts)){
       counts <- as.matrix(read.table(counts, check.names = FALSE))
@@ -116,27 +118,35 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
     stop("Could not adjust data to conform to package standards. Please check your input.")
   }
 
-  # deal with gene duplicates
-  #tic("remove duplicates")
-  #genes <- colnames(counts)
-  #split.genes <- strsplit(genes, dup.sep)
-  #gene.nodup <- paste(sapply(split.genes, function(x){x[-length(x)]}), sep = "")
-  #counts.fixed <- c()
-  #dup.genes <- gene.nodup[duplicated(gene.nodup)]
-  #genes.fixed <- c()
-  #for(i in 1:ncol(counts)){
-#	  if(gene.nodup[i] %in% dup.genes & !gene.nodup[i] %in% genes.fixed){
-#		  counts.fixed <- cbind(counts.fixed, rowSums(counts[,which(gene.nodup == gene.nodup[i])]))
-#		  genes.fixed <- c(genes.fixed, gene.nodup[i])
-#	  }else{
-#		  counts.fixed <- cbind(counts.fixed, counts[,i])
-#		  genes.fixed <- colnames(counts)[i]
-#	  }
-  #}
-  #print(dim(counts))
-  #counts <- counts.fixed
-  #print(dim(counts))
-  #toc()
-  
+  # deal with potential duplicates
+  tic("find duplicates")
+  if(!is.null(dup.sep)){
+    gene.names <- strsplit(colnames(counts), split = dup.sep)
+    suppressWarnings(gene.names <- sapply(gene.names, function(x){
+    if(!is.na(as.numeric(x[length(x)])) && !(nchar(x[length(x)]) > 1)){
+        if(length(x) == 2){
+        return(x[1])
+      }else{
+        return(paste(x[-length(x)], collapse = "_"))
+      }
+    }
+    return(paste(x, collapse = "_"))
+    }))
+    colnames(counts) <- gene.names
+  }
+  cat("Duplicates found:", sum(duplicated(colnames(counts))), "\nRemoving...\n")
+  toc()
+  tic("Combine and remove duplicates")
+  # find all duplicate names, iterate over them, sum them up and remove superfluous columns
+  if(sum(duplicated(colnames(counts))) > 0){
+    dup.genes <- unique(colnames(counts)[duplicated(colnames(counts))])
+    for(g in dup.genes){
+      gene.idx <- which(colnames(counts) == g)
+      counts[,gene.idx[1]] <- rowSums(counts[, gene.idx])
+      counts <- counts[,-gene.idx[-1]]
+    }
+  }
+  toc()
+ 
   return(list(counts = counts, ids = ids))
 }
