@@ -7,7 +7,7 @@
 enrichment_test(
   all.genes,
   genelist,
-  db,
+  db = NULL,
   go_ids = NULL,
   sig.level = 0.05,
   max.terms = 5000,

@@ -9,22 +9,13 @@
 #' @param node.size ignore GO nodes with less than node.size annotated genes
 #' @return table containing information about each significant GO term
 
-enrichment_test <- function(all.genes, genelist, db, go_ids = NULL, sig.level = 0.05, max.terms = 5000, node.size = 10){
+enrichment_test <- function(all.genes, genelist, db = NULL, go_ids = NULL, sig.level = 0.05, max.terms = 5000, node.size = 10){
   interesting.genes <- genelist
 
   if(is.null(go_ids)){
     go_ids <- getBM(attributes=c('go_id', 'external_gene_name', 'namespace_1003'), filters = 'external_gene_name', values = all.genes, mart = db, verbose = F)
   }
 
-#   if(remove.childless){
-#     BPterms <- ls(GOBPTerm)
-#     child.nodes <- as.list(GOBPCHILDREN)
-#     child.nodes <- sapply(BPterms, function(x) child.nodes[x])
-#     child.info <- names(child.nodes)[sapply(child.nodes, function(x) all(is.na(x)))]
-#     child.info <- sapply(child.info, function(x){strsplit(x, ".", fixed = TRUE)[[1]][1]})
-
-#     go_ids <- go_ids[which(go_ids[,1] %in% child.info),]
-#   }
   gene_2_go <- unstack(go_ids[, c(1,2)])
 
   interesting.genes <- interesting.genes[which(interesting.genes %in% go_ids[,2])]
