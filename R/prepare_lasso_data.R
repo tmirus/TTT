@@ -23,8 +23,8 @@ prepare_lasso_data <- function(ids_raw, ids_lasso, counts_lasso){
     # iterate over spots in lasso ids and search matching rows in raw ids
     for(i in 1:nrow(ids_lasso)){
         spot.intersect <- intersect(
-            which(ids_raw[,1] == ids_lasso[i,1]), 
-            which(ids_raw[,2] == ids_lasso[i,2])
+            which(ids_raw[,"Y"] == ids_lasso[i,1]), 
+            which(ids_raw[,"X"] == ids_lasso[i,2])
         )
         if(length(spot.intersect) == 1){
             idx_lasso <- c(idx_lasso, i)
@@ -38,6 +38,7 @@ prepare_lasso_data <- function(ids_raw, ids_lasso, counts_lasso){
     # name the spots accordingly
     rownames(ids_lasso) <- rownames(ids_raw)[idx_raw]
     rownames(counts_lasso) <- rownames(ids_raw)[idx_raw]
+    colnames(ids_lasso) <- c("Y", "X")
     
     return(list(counts=counts_lasso, ids = ids_lasso))
 }
