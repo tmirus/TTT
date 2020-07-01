@@ -136,8 +136,8 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     rownames(gene.info) <- as.character(gene.info$gene)
 
     return(list(
-	specific_genes = names(specific), 
-	differential_genes = gene.info, 
-	dsg = gene.info[which(rownames(gene.info) %in% names(specific)),]
+	specific_genes = specific, 
+	differential_genes = gene.info 
+	#dsg = gene.info[which(rownames(gene.info) %in% names(specific)),]
 	))
 }
