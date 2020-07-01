@@ -52,7 +52,7 @@ cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 
 
 	# create tSNE plots
     	tsne <- Rtsne(score.mat, check_duplicates = FALSE)
-	tsne.counts <- Rtsne(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:500],], check_duplicates = F)
+	tsne.counts <- Rtsne(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:500],]), check_duplicates = F)
 	
 	df <- data.frame(tsne$Y, clustering)
 	colnames(df) <- c("tSNE1", "tSNE2", "cluster")
