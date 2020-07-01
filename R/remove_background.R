@@ -20,12 +20,31 @@
 #' is in the lower right corner and on the x-axis (left to right) there are more spots than on the y-axis.
 #' @export
 
-remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7){
+remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7, plot.params = NULL){
   # reduce to one pixel per spot
   img <- EBImage::channel(img, "gray")
+  img <- EBImage::resize(img, 1000, 1000)
+  
+
+  if(!is.null(plot.params)){
+    nx <- plot.params$nx
+    ny <- plot.params$ny
+    ox <- plot.params$ox
+    oy <- plot.params$oy
+    dx <- (1000-2*ox)/nx
+    dy <- (1000-2*oy)/ny
+
+    ox1 <- as.integer(ox)
+    ox2 <- as.integer(1000-ox)
+    oy1 <- as.integer(oy)
+    oy2 <- as.integer(1000-oy)
+
+    img <- img[ox1:ox2, oy1:oy2]
+  }
+  
   img.reduced <- EBImage::resize(img, w=nx,h=ny)
   names <- rownames(counts)
-  
+
   # blur to reduce the risk of removing spots within tissue
   for(x in 1:nx){
     for(y in 1:ny){
@@ -47,13 +66,13 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7)
   spots.to.keep <- c()
   for(x in 1:nx){
     for(y in 1:ny){
-      if(!to.remove[y,x]) spots.to.keep <- rbind(spots.to.keep, c(35-x,33-y))
+      if(!to.remove[y,x]) spots.to.keep <- rbind(spots.to.keep, c(max(ids[,"X"])-x,max(ids[,"Y"])-y))
     }
   }
   spots.to.keep <- as.data.frame(spots.to.keep)
   colnames(spots.to.keep) <- c("X", "Y")
   
-  img <- EBImage::resize(img, 1000, 1000)
+  #img <- EBImage::resize(img, 1000, 1000)
   # return the original image with blanks where spots were removed
   dx <- dim(img)[1] / nx
   dy <- dim(img)[2] / ny
@@ -95,8 +114,10 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7)
     }
   }
 
-  ids.reduced <- ids[clusters.to.keep,]
-  ids.reduced <- clean_ids(ids.reduced)
+  if(length(clusters.to.keep) > 0){
+    ids.reduced <- ids[clusters.to.keep,]
+    ids.reduced <- clean_ids(ids.reduced)
+  }
   clusters.to.keep <- rownames(ids.reduced)
 
   return(list(

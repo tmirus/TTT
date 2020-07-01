@@ -39,7 +39,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     df <- c()
     # convert ids to image coordinates
     for(i in 1:length(barcodes)){
-        temp <- c(ox+(ids[barcodes[i],2])*(1000-2*ox)/nx,oy+(ids[barcodes[i],1])*(1000-2*ny)/ny,cluster[i])
+        temp <- c(ox+(ids[barcodes[i],"X"]-2)*(1000-2*ox)/nx,oy+(ids[barcodes[i],"Y"]-2)*(1000-2*oy)/ny,cluster[i])
         df <- rbind(df,temp)
     }
     df <- as.data.frame(df)
