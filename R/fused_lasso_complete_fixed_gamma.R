@@ -70,11 +70,13 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       # if all genes are removed, return empty list
       if(length(to.remove) < length(gene_list)){
         colnames(tmp_fits_set) <- gene_list[-to.remove]
+        names(lls_set) <- gene_list[-to.remove]
       }else{
         return(list())
       }
     }else{
       colnames(tmp_fits_set) <- gene_list
+      names(lls_set) <- gene_list
     }
     return(list(counts = tmp_fits_set, #fits = fits_set, 
                 BICs = BICs_set, 

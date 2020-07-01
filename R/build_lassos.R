@@ -81,6 +81,7 @@ build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,nc
     ids_lasso[,2] <- ids_lasso[,2] + 1
     # match the temporary data frame to original ids
     lasso.data <- prepare_lasso_data(coords_table, ids_lasso, as.matrix(counts))
+    lasso.data[["lls"]] <- lls
     
     if (!is.null(output_folder) && is.character(output_folder)) {
         saveRDS(as.matrix(lasso.data$counts), 
