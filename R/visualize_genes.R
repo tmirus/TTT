@@ -46,11 +46,11 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
          }
     }
 
-    gene.cluster <- hclust(dist(t(heatmap.counts[,all.genes]), "euclidean"), "average")
+    gene.cluster <- hclust(dist(t(heatmap.counts[,all.genes]), "euclidean"), "complete")
     gene.order <- gene.cluster$order
     genes <- all.genes[gene.order]
 
-    spot.cluster <- hclust(dist(heatmap.counts[,all.genes], "euclidean"), "average")
+    spot.cluster <- hclust(dist(heatmap.counts[,all.genes], "euclidean"), "complete")
     spot.order <- spot.cluster$order
     spots <- rownames(heatmap.counts)[spot.order]
     
@@ -87,7 +87,7 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
     }
 
     if(!is.null(filepath)){
-        pdf(paste(filepath, "clustering.pdf", sep = "/"), width = 10, height = 10)
+        pdf(paste(filepath, "clustering.pdf", sep = "/"), width = 20, height = 20)
         plot(spatial.cluster)
         plot(spatial.cluster.legend)
         plot(heatmap.plt)

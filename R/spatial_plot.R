@@ -62,6 +62,6 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     }else{
         p <- p + geom_point(na.rm = TRUE)+xlim(-1000,0)+ylim(0,1000)+ggtitle(title)
     }
-    p <- p + xlab("X") + ylab("Y") + theme_transparent
+    p <- p + xlab("X") + ylab("Y") + theme_transparent + coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
     return(p)
 }

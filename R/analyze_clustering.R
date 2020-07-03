@@ -45,6 +45,17 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     if(any(is.na(specific))){
     	specific <- specific[-which(is.na(specific))]
     }
+
+    pdf("entropy_test.pdf")
+    entropy.summary <- summary(specific)
+    print(entropy.summary)
+    hist(specific, breaks = 100, main = "Gene entropies")
+    abline(v = entropy.summary[2], col = "red")
+    abline(v = entropy.summary[3], col = "blue")
+    abline(v = entropy.summary[4], col = "green")
+    abline(v = entropy.summary[5], col = "red")
+    dev.off()
+
     specific <- specific[which(specific <= summary(specific)[2])]
    
     # implement testing with multtest for differentially expressed genes for each cluster
@@ -52,9 +63,9 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     test.results <- list()
     for(cl in rownames(cluster.libs)){
         # create temporary count matrix (transposed for multtest) and class labels
-	temp.counts <- t(counts[c(which(clustering == cl),which(clustering != cl)),])
+	    temp.counts <- log2(t(counts[c(which(clustering == cl),which(clustering != cl)),])+1)
         labs <- c(rep(0,length(which(clustering == cl))), rep(1,length(which(clustering != cl))))
-	# calculate t-scores, p-values and adjust
+	    # calculate t-scores, p-values and adjust
         t.scores <- mt.teststat(temp.counts, labs, test = "t")
         p.vals <- 2 * pt(abs(t.scores), length(labs) - 2, lower.tail = FALSE)
         p.vals <- p.adjust(p.vals, method = "BH")
@@ -137,7 +148,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
 
     return(list(
 	specific_genes = specific, 
-	differential_genes = gene.info 
-	#dsg = gene.info[which(rownames(gene.info) %in% names(specific)),]
+	differential_genes = gene.info,
+    gene.cluster.table = gene.table
 	))
 }

@@ -32,14 +32,11 @@ filter_genes <- function(analysis.data, lasso.data){
 
     specific.ranks <- 1:length(lls)
     names(specific.ranks) <- names(sort(analysis.data$specific[names(lls)]))
-    print(str(analysis.data$specific))
     specific.ranks <- specific.ranks[names(lls)]
 
     ranks <- lls_ranks + dsg_ranks + specific.ranks
-    print(str(ranks))
     names(ranks) <- names(lls)
     ranks <- sort(ranks)
-    print(str(ranks))
 
     #hist(lls, breaks = 100, main = "lls dsg")
     #plot(lls_ranks, dsg_ranks, xlab = "rank(LLS)", ylab = "rank(DSG)", main = "relation between LLS and DSG")
