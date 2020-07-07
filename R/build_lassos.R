@@ -90,6 +90,10 @@ build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,nc
                 file = paste(output_folder, name, "ids.RDS", sep = '/'))
     }
 
+    if(non.zero.after < 0.75 * non.zero){
+        warning("More than 25% of non-zero spots have been set to 0 by lasso. Consider using a smaller gamma for less sparsity.")
+    }
+
     # return counts and ids
     return(lasso.data)
 }
