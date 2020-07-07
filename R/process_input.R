@@ -21,7 +21,7 @@
 #' 2) ids - barcode data frame assigning spatial positions to spots
 #' @export
 
-process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, dup.sep = NULL){
+process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = NULL){
   if(is.character(counts)){
     if(file.exists(counts)){
       counts <- as.matrix(read.table(counts, check.names = FALSE))
@@ -48,7 +48,10 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
     if(ncol(ids) != 2){
       stop("ids must contain two columns (X and Y)")
     }
-    if(! all(range(ids) == c(2,34)) ){
+    # fill ids to range from 2 to 32/34 in Y/X-direction
+    ids <- fill_ids(ids)
+    
+    if(! all(range(ids) == c(2,34) && !force_indices) ){
       stop("The range of indices in ids does not match typical ST barcode files (index range 2 - 34). 
            Set force_indices = TRUE to proceed anyways. This might lead to unexpected behaviour.")
     }
@@ -66,22 +69,24 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
   
   # prepare either input ids or convert rownames to ids data frame
   if(!is.null(ids)){
-    # reorder the ids data frame to have x-coordinates in second and
-    # y-coordinate in first column
-    input.ids <- ids
-    r1 <- range(ids[,1])
-    r2 <- range(ids[,2])
-    if( (r1[2] - r1[1]) > (r2[2] - r2[1]) ){
-      x_ind <- 1
-      y_ind <- 2
-    }else if( (r1[2] - r1[1]) < (r2[2] - r2[1]) ){
-      x_ind <- 2
-      y_ind <- 1
-    }else{
-      stop("Dimension of a ST slide is 34x32. X and Y in the id matrix have the same dimension.")
+    if(!all(colnames(ids) == c("X", "Y"))){ 
+      # reorder the ids data frame to have x-coordinates in second and
+      # y-coordinate in first column
+      input.ids <- ids
+      r1 <- range(ids[,1])
+      r2 <- range(ids[,2])
+      if( (r1[2] - r1[1]) > (r2[2] - r2[1]) ){
+        x_ind <- 1
+        y_ind <- 2
+      }else if( (r1[2] - r1[1]) < (r2[2] - r2[1]) ){
+        x_ind <- 2
+        y_ind <- 1
+      }else{
+        stop("Dimension of a ST slide is 34x32. X and Y in the id matrix have the same dimension.")
+      }
+      ids <- data.frame(Y = input.ids[, y_ind], X = input.ids[, x_ind])
+      rownames(ids) <- rownames(input.ids)
     }
-    ids <- data.frame(Y = input.ids[, y_ind], X = input.ids[, x_ind])
-    rownames(ids) <- rownames(  input.ids)
   }else{
     # extract ids from rownames of counts and create a data frame
     ids.parts <- strsplit(rownames(counts), split = separate_by)
