@@ -56,7 +56,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     abline(v = entropy.summary[5], col = "red")
     dev.off()
 
-    specific <- specific[which(specific <= summary(specific)[2])]
+    specific <- specific[which(specific <= summary(specific)[3])]
    
     # implement testing with multtest for differentially expressed genes for each cluster
     # test each cluster against all other clusters at the same time
