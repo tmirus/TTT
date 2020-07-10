@@ -8,8 +8,9 @@
 #' @param counts non-negative numeric matrix containing gene counts, 
 #' rows correspond to spots, columns correspond to genes
 #' @param threshold relative brightness. spots above this threshold are discarded
+#' @param plot.params list as returned by plot_adjustment(). optional but recommended for optimal results.
 #' @details nx and ny depend on the cropping of the image. the area of measurements in an ST experiment is
-#' @return list containing two entries\cr
+#' @return list containing four entries\cr
 #' 1) spots.to.keep - vector of barcodes / spot names of the spots that should not be removed
 #' 2) spots.keep.clustering - vector of barcodes / spot names of the spots that should not be removed based on clustering in addition to image analysis
 #' 3) image - image showing the areas that are retained.
@@ -17,7 +18,8 @@
 #' in the image or not, different values need to be chosen for nx, ny. If they are included, the 
 #' default values of nx=35 and ny=33 are sensible. If not, it should be nx=33 and ny=31.\cr
 #' The image is assumed to be oriented such that the rectangular 4x4 array of spots in one of the corners
-#' is in the lower right corner and on the x-axis (left to right) there are more spots than on the y-axis.
+#' is in the lower right corner and on the x-axis (left to right) there are more spots than on the y-axis.\cr
+#' 4) clustering.tsne tSNE embedding of spots coloured by classification (background/tissue)
 #' @export
 
 remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7, plot.params = NULL){
@@ -114,6 +116,16 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7,
     }
   }
 
+  background.vec <- rep(0, nrow(counts))
+  names(background.vec) <- rownames(counts)
+  background.vec[clusters.to.keep] <- 1
+  background.vec <- as.factor(!as.logical(background.vec))
+  df <- data.frame(tsne, background.vec)
+  colnames(df) <- c("tSNE1", "tSNE2", "background")
+
+  p <- ggplot(df, aes(x=tSNE1, y = tSNE2, col = background)) + geom_point()
+
+
   if(length(clusters.to.keep) > 0){
     ids.reduced <- ids[clusters.to.keep,]
     ids.reduced <- clean_ids(ids.reduced)
@@ -123,6 +135,7 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7,
   return(list(
 	spots.to.keep = spots.to.keep, 
 	spots.keep.clustering = clusters.to.keep, 
-	image = img
+	image = img,
+  clustering.tsne = p
 	))
 }
