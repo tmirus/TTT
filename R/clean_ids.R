@@ -15,8 +15,8 @@ clean_ids <- function(ids) {
     y <- ids[i,"Y"]
     # find spots connected to spot i
     neighbours <- intersect(
-	which(ids[,"X"] %in% ((x-1):(x+1))), 
-	which(ids[,"Y"] %in% ((y-1):(y+1)))
+      which(ids[,"X"] %in% ((x-1):(x+1))), 
+      which(ids[,"Y"] %in% ((y-1):(y+1)))
     )
     # three (+ self) directly connected spots are enough to keep
     # the current spot
@@ -31,8 +31,9 @@ clean_ids <- function(ids) {
         x <- ids[n,"X"]
         y <- ids[n,"Y"]
         n_neighbours <- intersect(
-		which(ids[,"X"] %in% ((x-1):(x+1))), 
-		which(ids[,"Y"] %in% ((y-1):(y+1))))
+          which(ids[,"X"] %in% ((x-1):(x+1))), 
+          which(ids[,"Y"] %in% ((y-1):(y+1)))
+        )
         if(length(n_neighbours) > 5) {
           rmv = FALSE
           break

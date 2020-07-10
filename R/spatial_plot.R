@@ -41,15 +41,15 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     df <- c()
     # convert ids to image coordinates
     for(i in 1:length(barcodes)){
-        temp <- c(ox+(ids[barcodes[i],"X"]-2)*(1000-2*ox)/nx,oy+(ids[barcodes[i],"Y"]-2)*(1000-2*oy)/ny,cluster[i])
-        df <- rbind(df,temp)
+        temp <- c(ox+(ids[barcodes[i],"X"]-2)*(1000-2*ox)/nx,oy+(ids[barcodes[i],"Y"]-2)*(1000-2*oy)/ny, cluster[i])
+        df <- rbind(df, temp)
     }
     df <- as.data.frame(df)
-    colnames(df) <- c("X","Y","cluster")
+    colnames(df) <- c("X", "Y", "cluster")
 
     if(mode == "discrete"){
         df$cluster <- factor(df$cluster)
-        p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),col=cluster)) + xlim(-1000,0) + ylim(0,1000)
+        p <- ggplot(df, aes(x=-as.numeric(as.character(X)), y=as.numeric(as.character(Y)),col=cluster)) + xlim(-1000,0) + ylim(0,1000)
     }else if(mode == "continuous"){
         df$cluster <- as.numeric(as.character(df$cluster))
         df[which(df$cluster == 0),"cluster"] <- NA
@@ -59,8 +59,8 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     }
 
     if(!is.null(img)){
-        gob <- rasterGrob(img)
-        p <- p + annotation_custom(gob,-1000,0,0,1000)+geom_point(na.rm=TRUE)+#theme(legend.position = "none") + 
+        gob <- grid::rasterGrob(img)
+        p <- p + annotation_custom(gob,-1000,0,0,1000)+geom_point(na.rm=TRUE)+ #theme(legend.position = "none") + 
         ggtitle(title)
     }else{
         p <- p + geom_point(na.rm = TRUE)+xlim(-1000,0)+ylim(0,1000)+ggtitle(title)

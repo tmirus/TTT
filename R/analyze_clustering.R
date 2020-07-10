@@ -13,10 +13,8 @@
 #' 2) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes\cr
 #' 3) dsg - differential genes reduced to genes that are also contained in 'specific'
 #' @export
-analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
-    #counts <- counts[rownames(clustering.info$scores),]
-    #clustering <- clustering.info$clustering
 
+analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     # find cluster-specific genes by calculating total RNA per cluster and gene
     cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
     colnames(cluster.libs) <- colnames(counts)
@@ -46,16 +44,6 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     	specific <- specific[-which(is.na(specific))]
     }
 
-    pdf("entropy_test.pdf")
-    entropy.summary <- summary(specific)
-    print(entropy.summary)
-    hist(specific, breaks = 100, main = "Gene entropies")
-    abline(v = entropy.summary[2], col = "red")
-    abline(v = entropy.summary[3], col = "blue")
-    abline(v = entropy.summary[4], col = "green")
-    abline(v = entropy.summary[5], col = "red")
-    dev.off()
-
     specific <- specific[which(specific <= summary(specific)[3])]
    
     # implement testing with multtest for differentially expressed genes for each cluster
@@ -66,20 +54,19 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
 	    temp.counts <- log2(t(counts[c(which(clustering == cl),which(clustering != cl)),])+1)
         labs <- c(rep(0,length(which(clustering == cl))), rep(1,length(which(clustering != cl))))
 	    # calculate t-scores, p-values and adjust
-        t.scores <- mt.teststat(temp.counts, labs, test = "t")
+        t.scores <- multtest::mt.teststat(temp.counts, labs, test = "t")
         p.vals <- 2 * pt(abs(t.scores), length(labs) - 2, lower.tail = FALSE)
         p.vals <- p.adjust(p.vals, method = "BH")
         names(p.vals) <- rownames(temp.counts)
 
-	# if test not possible. set the genes p-value to 1 (max)
-	if(any(is.na(p.vals))){
-		p.vals[is.na(p.vals)] <- 1
-	}
-	if(any(is.nan(p.vals))){
-		p.vals[is.nan(p.vals)] <- 1
-	}
-
-	p.vals <- sort(p.vals)
+        # if test not possible. set the genes p-value to 1 (max)
+        if(any(is.na(p.vals))){
+            p.vals[is.na(p.vals)] <- 1
+        }
+        if(any(is.nan(p.vals))){
+            p.vals[is.nan(p.vals)] <- 1
+        }
+        p.vals <- sort(p.vals)
         test.results[[cl]] <- p.vals
     }
 
@@ -147,8 +134,8 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     rownames(gene.info) <- as.character(gene.info$gene)
 
     return(list(
-	specific_genes = specific, 
-	differential_genes = gene.info,
-    gene.cluster.table = gene.table
+        specific_genes = specific, 
+        differential_genes = gene.info,
+        gene.cluster.table = gene.table
 	))
 }

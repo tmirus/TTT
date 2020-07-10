@@ -14,6 +14,9 @@
 #' 4) tsne.counts - ggplot object, tSNE plot of count matrix coloured by clustering
 #' @export
 cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 4, score.mat = NULL){
+	suppressMessages(library(parallel, quietly = TRUE))
+	suppressMessages(library(doParallel, quietly = TRUE))
+	suppressMessages(library(foreach, quietly = TRUE))
 	# calculate similarity on z-scores
 	counts <- t(apply(counts, 2, function(x) {(x-mean(x)) / sd(x)}))
 
@@ -51,11 +54,11 @@ cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 
 	}
 	
 	# cluster using pam with nc starting points
-	clustering <- pam(score.mat, nc)$clustering
+	clustering <- cluster::pam(score.mat, nc)$clustering
 
 	# create tSNE plots
-    tsne <- Rtsne(score.mat, check_duplicates = FALSE)
-	tsne.counts <- Rtsne(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:min(500, nrow(counts))],]), check_duplicates = F)
+    tsne <- Rtsne::Rtsne(score.mat, check_duplicates = FALSE)
+	tsne.counts <- Rtsne::Rtsne(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:min(500, nrow(counts))],]), check_duplicates = F)
 	
 	df <- data.frame(tsne$Y, clustering)
 	colnames(df) <- c("tSNE1", "tSNE2", "cluster")

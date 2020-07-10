@@ -13,6 +13,7 @@
 #' @export
 
 build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,ncores=4,gamma=1){
+    suppressMessages(library(parallel, quietly = TRUE))
     # select genes randomly for each thread to balance the load
     genes <- colnames(counts_matrix)
     gene_list <- vector(mode = "list", length = ncores)
@@ -80,6 +81,7 @@ build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,nc
             ids_lasso <- rbind(ids_lasso, c(j, i))
         }
     }
+
     rownames(ids_lasso) <- 1:nrow(ids_lasso)
     ids_lasso[,2] <- ids_lasso[,2] + 1
     # match the temporary data frame to original ids

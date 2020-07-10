@@ -5,7 +5,7 @@
 #' @return returns the nearest possible evaluation to your lambda
  
 coef_error <- function(lasso,lambda){
-    tmp <- try(coef(lasso, lambda=lambda),silent = TRUE)
+    tmp <- try(genlasso::coef.genlasso(lasso, lambda=lambda),silent = TRUE)
     # if an error occured catch it, extract failed lambda from error message and recursively call 
     # coeff_error with slightly different lambda
     if (typeof(tmp)=='character'){

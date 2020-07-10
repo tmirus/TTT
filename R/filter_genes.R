@@ -10,22 +10,13 @@ filter_genes <- function(analysis.data, lasso.data){
     lls <- lasso.data$lls
 
     # only differentially expressed genes with low entropy are considered
-
-    # maybe reorder by combined rank? combined score?
     if(any(rownames(differential.genes) %in% specific.genes)){
         differential.genes <- differential.genes[which(rownames(differential.genes) %in% specific.genes),]
     }
 
     # plot lls gene ranks vs combined gene ranks
-
-    #plot("test_lls_dist.pdf")
-    #hist(lls, breaks = 200, main = "lls all genes")
-    #plot(density(lls), col = "red")
-    #abline(v = mean(lls), col = "red")
     lls <- lls[rownames(differential.genes)]
     lls <- sort(lls)
-    #lines(density(lls), col = "green")
-    #abline(v = mean(lls), col = "green")
     
     lls_ranks <- 1:length(lls)
     names(lls_ranks) <- names(lls)

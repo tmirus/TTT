@@ -56,13 +56,13 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7,
         x.neighbours <- x.neighbours[-which(x.neighbours < 1 | x.neighbours > nx)]
       if(any(y.neighbours < 1 | y.neighbours > ny)) 
         y.neighbours <- y.neighbours[-which(y.neighbours < 1 | y.neighbours > ny)]
-      imageData(img.reduced)[x,y] <- mean(imageData(img.reduced)[x.neighbours, y.neighbours])
+      EBImage::imageData(img.reduced)[x,y] <- mean(EBImage::imageData(img.reduced)[x.neighbours, y.neighbours])
     }
   }
   
   # select the spots to remove
-  imageData(img.reduced)[imageData(img.reduced) > threshold*max(imageData(img.reduced))] <- 1
-  to.remove <- t(matrix(imageData(img.reduced) == 1, nrow=nx))
+  EBImage::imageData(img.reduced)[EBImage::imageData(img.reduced) > threshold*max(EBImage::imageData(img.reduced))] <- 1
+  to.remove <- t(matrix(EBImage::imageData(img.reduced) == 1, nrow=nx))
   
   # store in more compatible format
   spots.to.keep <- c()
@@ -74,14 +74,13 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7,
   spots.to.keep <- as.data.frame(spots.to.keep)
   colnames(spots.to.keep) <- c("X", "Y")
   
-  #img <- EBImage::resize(img, 1000, 1000)
   # return the original image with blanks where spots were removed
   dx <- dim(img)[1] / nx
   dy <- dim(img)[2] / ny
   for(x in 1:nx){
     for(y in 1:ny){
       if(to.remove[y,x]){
-        imageData(img)[(as.integer((x-1)*dx+1)):as.integer(x*dx), (as.integer((y-1)*dy+1)):as.integer(y*dy)] <- 1
+        EBImage::imageData(img)[(as.integer((x-1)*dx+1)):as.integer(x*dx), (as.integer((y-1)*dy+1)):as.integer(y*dy)] <- 1
       }
     }
   }
@@ -103,9 +102,9 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7,
   spots.to.keep <- rownames(ids.reduced)
 
   # tSNE embedding
-  tsne <- Rtsne(counts, check_duplicates = F)$Y
+  tsne <- Rtsne::Rtsne(counts, check_duplicates = F)$Y
   # create comparatively large number of clusters
-  clustering <- kmeans(tsne, 15)$cluster
+  clustering <- cluster::pam(tsne, 15)$clustering
   names(clustering) <- rownames(counts)
 
   # keep all clusters with a certain amount of spots in spots.to.keep
@@ -133,9 +132,9 @@ remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7,
   clusters.to.keep <- rownames(ids.reduced)
 
   return(list(
-	spots.to.keep = spots.to.keep, 
-	spots.keep.clustering = clusters.to.keep, 
-	image = img,
-  clustering.tsne = p
+    spots.to.keep = spots.to.keep, 
+    spots.keep.clustering = clusters.to.keep, 
+    image = img,
+    clustering.tsne = p
 	))
 }

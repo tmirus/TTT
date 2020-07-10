@@ -15,4 +15,5 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0
 biocViews:
-Depends: EBImage, genlasso, parallel, doParallel, factoextra, tictoc, topGO, GO.db, biomaRt, ggplot2, heatmap3, gridExtra, RColorBrewer, Rtsne, grid, OrderedList, multtest, cluster
+Imports: genlasso, biomaRt, Rtsne, OrderedList, multtest, cluster, grid, gridExtra, RColorBrewer, parallel, doParallel, topGO, foreach
+Depends: EBImage, ggplot2

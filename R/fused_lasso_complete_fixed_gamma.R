@@ -33,7 +33,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       }
 
       # full solution path calculation
-      tmp_lasso <- fusedlasso2d(tmp_matrix,gamma = gamma)
+      tmp_lasso <- genlasso::fusedlasso2d(tmp_matrix,gamma = gamma)
       
       # calculate BICs for all possible models
       BIC_list <- calc_BICs(tmp_lasso)

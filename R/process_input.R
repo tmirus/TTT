@@ -124,7 +124,6 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
   }
 
   # deal with potential duplicates
-  tic("find duplicates")
   if(!is.null(dup.sep)){
     gene.names <- strsplit(colnames(counts), split = dup.sep)
     suppressWarnings(gene.names <- sapply(gene.names, function(x){
@@ -140,8 +139,7 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
     colnames(counts) <- gene.names
   }
   cat("Duplicates found:", sum(duplicated(colnames(counts))), "\nRemoving...\n")
-  toc()
-  tic("Combine and remove duplicates")
+  
   # find all duplicate names, iterate over them, sum them up and remove superfluous columns
   if(sum(duplicated(colnames(counts))) > 0){
     dup.genes <- unique(colnames(counts)[duplicated(colnames(counts))])
@@ -151,7 +149,5 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
       counts <- counts[,-gene.idx[-1]]
     }
   }
-  toc()
- 
   return(list(counts = counts, ids = ids))
 }

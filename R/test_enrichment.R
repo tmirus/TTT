@@ -26,8 +26,8 @@ test_enrichment <- function(analysis.data, clustering, counts, split_up_down = T
 
     # get GO database for testing
     suppressMessages({
-        db <- useMart('ENSEMBL_MART_ENSEMBL',dataset=db_dataset, host="www.ensembl.org", verbose = TRUE)
-        go_ids <- getBM(
+        db <- biomaRt::useMart('ENSEMBL_MART_ENSEMBL',dataset=db_dataset, host="www.ensembl.org", verbose = TRUE)
+        go_ids <- biomaRt::getBM(
             attributes=c('go_id', gene_id, 'namespace_1003'), 
             filters = gene_id, 
             values = colnames(counts), 
