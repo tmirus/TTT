@@ -7,7 +7,7 @@
 #' @param ids data frame or matrix assigning spatial coordinates to the spots (see process_input() for details)
 #' @param clustering list containing clustering information as returned by cluster_counts_OL (numeric vector assigning spots to clusters)
 #' @param sig.level significance level for the t-test between clusters; genes with p-values above this threshold
-#' will be removed from output
+#' will be removed from output; default 0.05
 #' @return list with 3 entries:\cr
 #' 1) specific - character vecor containing names of genes that are specific to any cluster\cr
 #' 2) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes\cr

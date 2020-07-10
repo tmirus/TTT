@@ -14,7 +14,7 @@
 #' default FALSE
 #' @param force_indices logical, in case the range of x and y indices is not the same as in the
 #' ST barcode files
-#' @param dub.sep character, optional; if duplicate gene names are distinguished by e.g. _1, _2
+#' @param dup.sep character, optional; if duplicate gene names are distinguished by e.g. _1, _2
 #' at the end, pass dup.sep="_" to try to combine these columns
 #' @return list with two entries:\cr
 #' 1) counts - count matrix

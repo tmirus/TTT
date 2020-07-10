@@ -1,4 +1,8 @@
 #' this function returns a table of interesting genes based on lasso model fit, specificity and differential expression
+#' 
+#' @param analysis.data output of analyze_clustering function
+#' @param lasso.data output of build_lassos function
+#' @return data frame containing gene name, cluster with lowest p-value, lowest p-value and up/downregulation information for each gene
 #' @export
 filter_genes <- function(analysis.data, lasso.data){
     differential.genes <- analysis.data$differential_genes

@@ -10,49 +10,52 @@
 #' @return list containing 3 elements:\cr
 #' 1) scores - score matrix containing pairwise OrderedList-scores for all spots\cr
 #' 2) clustering - numeric clustering vector, contains clusters for all spots in the same order as rownames(counts)\cr
-#' 3) tsne - ggplot object, tSNE plot of score matrix coloured by clustering
+#' 3) tsne.scores - ggplot object, tSNE plot of score matrix coloured by clustering\cr
+#' 4) tsne.counts - ggplot object, tSNE plot of count matrix coloured by clustering
 #' @export
-cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 4){
+cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 4, score.mat = NULL){
 	# calculate similarity on z-scores
 	counts <- t(apply(counts, 2, function(x) {(x-mean(x)) / sd(x)}))
 
 	# needed for OrderedList
 	base = exp(-alpha)
 
-	# serial version
-	if(ncores == 1){
-		# create and fill score matrix
-		score.mat <- matrix(0, ncol(counts), ncol(counts))
-		for(i in 1:ncol(score.mat)){
-			for(j in 1:ncol(score.mat)){
-				score <- OrderedList::scoreRankings(rank(counts[, i]), rank(counts[, j]), n, base)
-				score.mat[i,j] <- score
-				score.mat[j,i] <- score
+	if(is.null(score.mat) | !all(colnames(score.mat) == colnames(counts))){
+		# serial version
+		if(ncores == 1){
+			# create and fill score matrix
+			score.mat <- matrix(0, ncol(counts), ncol(counts))
+			for(i in 1:ncol(score.mat)){
+				for(j in 1:ncol(score.mat)){
+					score <- OrderedList::scoreRankings(rank(counts[, i]), rank(counts[, j]), n, base)
+					score.mat[i,j] <- score
+					score.mat[j,i] <- score
+				}
 			}
-		}
-	}else{
-		# parallel version
-		# initialize threading
-		cl <- makeCluster(ncores)
-		registerDoParallel(cl)
+		}else{
+			# parallel version
+			# initialize threading
+			cl <- makeCluster(ncores)
+			registerDoParallel(cl)
 
-		# calculate scores between all spot and all other spots in parallel
-		score.mat <- foreach(i = 1:ncol(counts), .combine = 'cbind') %dopar% {
-			sapply(1:ncol(counts), function(x){
-				OrderedList::scoreRankings(rank(counts[, i]), rank(counts[, x]), n, base)
-			})
+			# calculate scores between all spot and all other spots in parallel
+			score.mat <- foreach(i = 1:ncol(counts), .combine = 'cbind') %dopar% {
+				sapply(1:ncol(counts), function(x){
+					OrderedList::scoreRankings(rank(counts[, i]), rank(counts[, x]), n, base)
+				})
+			}
+			stopCluster(cl)
 		}
-		stopCluster(cl)
+		colnames(score.mat) <- colnames(counts)
+		rownames(score.mat) <- colnames(counts)
 	}
-	colnames(score.mat) <- colnames(counts)
-	rownames(score.mat) <- colnames(counts)
 	
 	# cluster using pam with nc starting points
 	clustering <- pam(score.mat, nc)$clustering
 
 	# create tSNE plots
-    	tsne <- Rtsne(score.mat, check_duplicates = FALSE)
-	tsne.counts <- Rtsne(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:500],]), check_duplicates = F)
+    tsne <- Rtsne(score.mat, check_duplicates = FALSE)
+	tsne.counts <- Rtsne(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:min(500, nrow(counts))],]), check_duplicates = F)
 	
 	df <- data.frame(tsne$Y, clustering)
 	colnames(df) <- c("tSNE1", "tSNE2", "cluster")
