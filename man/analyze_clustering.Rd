@@ -17,7 +17,7 @@ rows correspond to spots, columns correspond to genes}
 \item{clustering}{list containing clustering information as returned by cluster_counts_OL (numeric vector assigning spots to clusters)}
 
 \item{sig.level}{significance level for the t-test between clusters; genes with p-values above this threshold
-will be removed from output}
+will be removed from output; default 0.05}
 }
 \value{
 list with 3 entries:\cr

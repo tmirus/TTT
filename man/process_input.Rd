@@ -10,7 +10,8 @@ process_input(
   ids = NULL,
   separate_by = "x",
   force_counts = FALSE,
-  dup.sep = "_"
+  force_indices = FALSE,
+  dup.sep = NULL
 )
 }
 \arguments{
@@ -31,6 +32,9 @@ default FALSE}
 
 \item{force_indices}{logical, in case the range of x and y indices is not the same as in the
 ST barcode files}
+
+\item{dup.sep}{character, optional; if duplicate gene names are distinguished by e.g. _1, \emph{2
+at the end, pass dup.sep="}" to try to combine these columns}
 }
 \value{
 list with two entries:\cr

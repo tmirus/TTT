@@ -4,7 +4,14 @@
 \alias{cluster_counts_OL}
 \title{This function uses the OrderedList package to calculate pairwise similarity scores for all spots and cluster on these scores using pam}
 \usage{
-cluster_counts_OL(counts, nc = 6, n = 1000, alpha = 0.25, ncores = 4)
+cluster_counts_OL(
+  counts,
+  nc = 6,
+  n = 1000,
+  alpha = 0.25,
+  ncores = 4,
+  score.mat = NULL
+)
 }
 \arguments{
 \item{counts}{non-negative numeric matrix containing gene counts,
@@ -23,7 +30,8 @@ list containing 3 elements:\cr
 \enumerate{
 \item scores - score matrix containing pairwise OrderedList-scores for all spots\cr
 \item clustering - numeric clustering vector, contains clusters for all spots in the same order as rownames(counts)\cr
-\item tsne - ggplot object, tSNE plot of score matrix coloured by clustering
+\item tsne.scores - ggplot object, tSNE plot of score matrix coloured by clustering\cr
+\item tsne.counts - ggplot object, tSNE plot of count matrix coloured by clustering
 }
 }
 \description{

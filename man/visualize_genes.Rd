@@ -7,9 +7,9 @@
 visualize_genes(
   counts,
   ids,
-  img,
+  img = NULL,
   clustering,
-  gene.info,
+  genelist,
   filepath = NULL,
   plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)
 )
@@ -24,7 +24,7 @@ rows correspond to spots, columns correspond to genes}
 
 \item{clustering}{numeric vector, same order as rownames(counts), assigning each spot a cluster}
 
-\item{gene.info}{list as returned by analyze_clustering()}
+\item{genelist}{data frame containing genes of interest (e.g. output of filter_genes)}
 
 \item{filepath}{character, directory in which to save plots; if not specified, plots will not be saved to disk}
 
@@ -33,10 +33,10 @@ rows correspond to spots, columns correspond to genes}
 \value{
 list containing 4 plots (ggplot objects):\cr
 \enumerate{
-\item spatial.cluster - overlay of clustering on ST image
-\item spatial.cluster.legend - spatial clustering, without ST image in background, but with legend
-\item heatmap.plt - simplified heatmap, depicting mean expression of all interesting genes in the different clusters
-\item heatmap.full.plt - heatmap visualizing expression of all interesting genes in all spots
+\item spatial.cluster - overlay of clustering on ST image if image was supplied; NULL otherwise\cr
+\item spatial.cluster.legend - spatial clustering, without ST image in background, but with legend\cr
+\item heatmap.plt - simplified heatmap, depicting mean expression of all interesting genes in the different clusters\cr
+\item heatmap.full.plt - heatmap visualizing expression of all interesting genes in all spots\cr
 }
 }
 \description{

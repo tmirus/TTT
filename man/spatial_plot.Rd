@@ -10,7 +10,9 @@ spatial_plot(
   cluster,
   img = NULL,
   mode = "discrete",
-  plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)
+  plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32),
+  spot.col = "black",
+  title = ""
 )
 }
 \arguments{
@@ -29,6 +31,10 @@ how this information is used is determined by the parameter mode}
 "discrete" will be encoded in colors (e.g. clustering information), 'continuous' will be displayed by size (e.g. amount of RNA)}
 
 \item{plot.params}{list of parameters needed for good spatial visualization as returned by plot_adjustment}
+
+\item{spot.col}{character specifying the color of the spots if mode is "continuous"}
+
+\item{title}{character, title of the plot"}
 }
 \value{
 ggplot2 object (plot)

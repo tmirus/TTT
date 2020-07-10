@@ -5,7 +5,15 @@
 \title{remove background spots (not covered by tissue) from ST data based on tissue image.
 Manual checking of the result and adjustment of the threshold is needed.}
 \usage{
-remove_background(img, nx = 35, ny = 33, ids, counts, threshold = 0.7)
+remove_background(
+  img,
+  nx = 35,
+  ny = 33,
+  ids,
+  counts,
+  threshold = 0.7,
+  plot.params = NULL
+)
 }
 \arguments{
 \item{img}{image of the ST slide, cropped to the spot area. image read by EBimage::readImage()}
@@ -20,9 +28,11 @@ remove_background(img, nx = 35, ny = 33, ids, counts, threshold = 0.7)
 rows correspond to spots, columns correspond to genes}
 
 \item{threshold}{relative brightness. spots above this threshold are discarded}
+
+\item{plot.params}{list as returned by plot_adjustment(). optional but recommended for optimal results.}
 }
 \value{
-list containing two entries\cr
+list containing four entries\cr
 \enumerate{
 \item spots.to.keep - vector of barcodes / spot names of the spots that should not be removed
 \item spots.keep.clustering - vector of barcodes / spot names of the spots that should not be removed based on clustering in addition to image analysis
@@ -31,7 +41,8 @@ typically framed by spots for which there exist no measurements. Depending on wh
 in the image or not, different values need to be chosen for nx, ny. If they are included, the
 default values of nx=35 and ny=33 are sensible. If not, it should be nx=33 and ny=31.\cr
 The image is assumed to be oriented such that the rectangular 4x4 array of spots in one of the corners
-is in the lower right corner and on the x-axis (left to right) there are more spots than on the y-axis.
+is in the lower right corner and on the x-axis (left to right) there are more spots than on the y-axis.\cr
+\item clustering.tsne tSNE embedding of spots coloured by classification (background/tissue)
 }
 }
 \description{
