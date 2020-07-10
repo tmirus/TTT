@@ -31,7 +31,7 @@ enrichment_test <- function(all.genes, genelist, db = NULL, go_ids = NULL, sig.l
   suppressMessages({
   fisher_result <- runTest(GOdata, algorithm = 'weight01', statistic = 'fisher', verbose = F)
   allGO <- usedGO(GOdata)
-  all_res <- GenTable(GOdata, weightFisher = fisher_result, orderBy = 'weightFisher', topNodes = max.terms)
+  all_res <- GenTable(GOdata, weightFisher = fisher_result, orderBy = 'weightFisher', topNodes = min(max.terms,length(score(fisher_result))))
   })
   all_res <- all_res[order(as.numeric(all_res$weightFisher)),]
   res.table.p <- all_res[which(as.numeric(all_res$weightFisher) <= sig.level),]
