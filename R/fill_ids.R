@@ -1,3 +1,7 @@
+#' fill the barcode data frame with artificial entries for missing coordinates
+#'
+#' @param ids barcode data frame assigning spatial coordinates to all spots; column names must be 'X' and 'Y'
+#' @return full ids data frame
 
 fill_ids <- function(ids) {
     rnames <- c()
@@ -6,8 +10,11 @@ fill_ids <- function(ids) {
         for(j in 2:32){
             idx <- intersect(which(ids[,"X"] == i), which(ids[,"Y"] == j))
             if(length(idx) == 0){
-                add_ids <- rbind(add_ids, c(i, j))
-                rnames <- c(rnames, paste("fill",as.character((i-1)*34+j), sep = "_"))
+                if(colnames(ids)[1] == "X")
+                    add_ids <- rbind(add_ids, c(i, j))
+                else 
+                    add_ids <- rbind(add_ids, c(j, i))
+                rnames <- c(rnames, paste("fill",as.character((i-1)*32+j), sep = "_"))
             }
         }
     }

@@ -17,6 +17,9 @@ build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,nc
     genes <- colnames(counts_matrix)
     gene_list <- vector(mode = "list", length = ncores)
 
+
+    non.zero <- sum(rowSums(counts_matrix) > 0)
+
     if(ncores > 1){
         genes.per.thread <- as.integer(ncol(counts_matrix) / ncores) 
         for(i in 1:(ncores-1)){
@@ -89,7 +92,7 @@ build_lassos <- function(counts_matrix,coords_table,name,output_folder = NULL,nc
         saveRDS(lasso.data$ids,
                 file = paste(output_folder, name, "ids.RDS", sep = '/'))
     }
-
+    non.zero.after <- sum(rowSums(counts) > 0)
     if(non.zero.after < 0.75 * non.zero){
         warning("More than 25% of non-zero spots have been set to 0 by lasso. Consider using a smaller gamma for less sparsity.")
     }
