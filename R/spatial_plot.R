@@ -10,10 +10,12 @@
 #' @param mode character specifying how the information in 'cluster' should be visualized. Must be one of 'discrete' or 'continuous'.
 #' "discrete" will be encoded in colors (e.g. clustering information), 'continuous' will be displayed by size (e.g. amount of RNA)
 #' @param plot.params list of parameters needed for good spatial visualization as returned by plot_adjustment
+#' @param spot.col character specifying the color of the spots if mode is "continuous"
+#' @param title character, title of the plot"
 #' @return ggplot2 object (plot)
 #' @export 
 
-spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)){
+spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32), spot.col = "black", title = ""){
     theme_transparent <- theme(
         panel.background = element_rect(fill = "transparent"), # bg of the panel
         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
@@ -22,7 +24,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
         axis.line = element_blank(), # adding a black line for x and y axis
         axis.text = element_blank(),
         axis.title = element_blank(),
-        plot.title = element_blank(),
+        #plot.title = element_blank(),
         axis.ticks = element_blank()
     )
 
@@ -51,14 +53,15 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     }else if(mode == "continuous"){
         df$cluster <- as.numeric(as.character(df$cluster))
         df[which(df$cluster == 0),"cluster"] <- NA
-        p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),size=cluster)) + xlim(-1000,0) + ylim(0,1000)
+        p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),size=cluster), col = spot.col) + xlim(-1000,0) + ylim(0,1000) + theme(legend.position = "none")
     }else{
         stop("Invalid mode.")
     }
 
     if(!is.null(img)){
         gob <- rasterGrob(img)
-        p <- p + annotation_custom(gob,-1000,0,0,1000)+geom_point(na.rm=TRUE)+theme(legend.position = "none") + ggtitle(title)
+        p <- p + annotation_custom(gob,-1000,0,0,1000)+geom_point(na.rm=TRUE)+#theme(legend.position = "none") + 
+        ggtitle(title)
     }else{
         p <- p + geom_point(na.rm = TRUE)+xlim(-1000,0)+ylim(0,1000)+ggtitle(title)
     }

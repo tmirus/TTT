@@ -5,21 +5,28 @@
 #' @param ids data frame or matrix assigning spatial coordinates to the spots
 #' @param img image of ST slide, read using EBImage::readImage()
 #' @param clustering numeric vector, same order as rownames(counts), assigning each spot a cluster
-#' @param gene.info list as returned by analyze_clustering()
+#' @param genelist data frame containing genes of interest (e.g. output of filter_genes)
 #' @param filepath character, directory in which to save plots; if not specified, plots will not be saved to disk
 #' @param plot.params plotting parameters as returned by plot_adjustment()
 #' @return list containing 4 plots (ggplot objects):\cr
-#' 1) spatial.cluster - overlay of clustering on ST image
-#' 2) spatial.cluster.legend - spatial clustering, without ST image in background, but with legend
-#' 3) heatmap.plt - simplified heatmap, depicting mean expression of all interesting genes in the different clusters
-#' 4) heatmap.full.plt - heatmap visualizing expression of all interesting genes in all spots
+#' 1) spatial.cluster - overlay of clustering on ST image if image was supplied; NULL otherwise\cr
+#' 2) spatial.cluster.legend - spatial clustering, without ST image in background, but with legend\cr
+#' 3) heatmap.plt - simplified heatmap, depicting mean expression of all interesting genes in the different clusters\cr
+#' 4) heatmap.full.plt - heatmap visualizing expression of all interesting genes in all spots\cr
 #' @export
-visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = NULL, plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)){
+visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filepath = NULL, plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)){
+    # remove genes with 0 variance for the heatmaps
+    if(any(apply(counts, 2, var) == 0)){
+	    counts <- counts[,-which(apply(counts, 2, var) == 0)]
+    }
+
     spatial.cluster.legend <- spatial_plot(rownames(counts), ids, clustering, NULL, "discrete", plot.params)
-    spatial.cluster <- spatial_plot(rownames(counts), ids, clustering, img, "discrete", plot.params)
+    
+    if(!is.null(img))
+        spatial.cluster <- spatial_plot(rownames(counts), ids, clustering, img, "discrete", plot.params)
 
     #all.genes <- unique(unlist(sapply(gene.info[[2]], function(x){names(x)}), use.names = F))
-    all.genes <- rownames(gene.info[[2]])
+    all.genes <- rownames(genelist)
     heatmap.mat <- matrix(0, nrow = length(all.genes), ncol = length(unique(clustering)))
     rownames(heatmap.mat) <- all.genes
     colnames(heatmap.mat) <- unique(clustering)
@@ -88,14 +95,16 @@ visualize_genes <- function(counts, ids, img, clustering, gene.info, filepath = 
 
     if(!is.null(filepath)){
         pdf(paste(filepath, "clustering.pdf", sep = "/"), width = 20, height = 20)
-        plot(spatial.cluster)
+        
+        if(exists("spatial.cluster")) plot(spatial.cluster)
         plot(spatial.cluster.legend)
         plot(heatmap.plt)
         plot(heatmap.full.plt)
         dev.off()
     }
-
-    cluster.plots <- list(spatial = spatial.cluster, spatial.no_img = spatial.cluster.legend, heatmap = heatmap.plt, heatmap.full = heatmap.full.plt)
-
+    if(exists("spatial.cluster"))
+        cluster.plots <- list(spatial = spatial.cluster, spatial.no_img = spatial.cluster.legend, heatmap = heatmap.plt, heatmap.full = heatmap.full.plt)
+    else
+        cluster.plots <- list(spatial = NULL, spatial.no_img = spatial.cluster.legend, heatmap = heatmap.plt, heatmap.full = heatmap.full.plt)
     return(cluster.plots)
 }
