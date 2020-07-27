@@ -12,10 +12,27 @@
 #' @param plot.params list of parameters needed for good spatial visualization as returned by plot_adjustment
 #' @param spot.col character specifying the color of the spots if mode is "continuous"
 #' @param title character, title of the plot"
+#' @param indicator string, either "col" or "size", depending on wether information should be conveyed by spot size or colour.
+#' If not specified the default for mode "discrete" will be "col" and the default for mode "continuous" will be "size". 
 #' @return ggplot2 object (plot)
 #' @export 
 
-spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32), spot.col = "black", title = ""){
+spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32), spot.col = "black", title = "", indicator = NULL){
+    if(!mode %in% c("discrete", "continuous")){
+      stop("Invalid value for parameter 'mode'. Must be one of 'discrete' or 'continuous'.")
+    }
+    if(!is.null(indicator)){
+      if(!indicator %in% c("col", "size")){
+        stop("Invalid value for parameter 'indicator'. Must be one of 'col' or 'size'.")
+      }
+    }else{
+      if(mode == "discrete"){
+        indicator <- "col"
+      }else{
+        indicator <- "size"
+      }
+    }
+  
     theme_transparent <- theme(
         panel.background = element_rect(fill = "transparent"), # bg of the panel
         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
@@ -49,22 +66,40 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
 
     if(mode == "discrete"){
         df$cluster <- factor(df$cluster)
-        p <- ggplot(df, aes(x=-as.numeric(as.character(X)), y=as.numeric(as.character(Y)),col=cluster)) + xlim(-1000,0) + ylim(0,1000)
-    }else if(mode == "continuous"){
+        if(indicator == "col"){
+          p <- ggplot(
+            df, 
+            aes(
+              x=-as.numeric(as.character(X)), 
+              y=as.numeric(as.character(Y)),
+              col=cluster
+              )
+            )
+        }else{
+          p <- ggplot(df, aes(x=-as.numeric(as.character(X)), y=as.numeric(as.character(Y)),size=cluster), col = spot.col) +
+            theme(legend.position = "none")
+        }
+    }else{
         df$cluster <- as.numeric(as.character(df$cluster))
         df[which(df$cluster == 0),"cluster"] <- NA
-        p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),size=cluster), col = spot.col) + xlim(-1000,0) + ylim(0,1000) + theme(legend.position = "none")
-    }else{
-        stop("Invalid mode.")
+        if(indicator == "size"){
+          p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),size=cluster), col = spot.col) +
+            theme(legend.position = "none")
+        }else{
+          p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),col=cluster))
+        }
     }
 
     if(!is.null(img)){
         gob <- grid::rasterGrob(img)
-        p <- p + annotation_custom(gob,-1000,0,0,1000)+geom_point(na.rm=TRUE)+ #theme(legend.position = "none") + 
-        ggtitle(title)
-    }else{
-        p <- p + geom_point(na.rm = TRUE)+xlim(-1000,0)+ylim(0,1000)+ggtitle(title)
+        p <- p + annotation_custom(gob,-1000,0,0,1000)
     }
-    p <- p + xlab("X") + ylab("Y") + theme_transparent + coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
+    p <- p + 
+      geom_point(na.rm = TRUE) + 
+      ggtitle(title) + 
+      xlab("") + 
+      ylab("") + 
+      theme_transparent + 
+      coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
     return(p)
 }

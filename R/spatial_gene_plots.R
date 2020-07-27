@@ -24,9 +24,25 @@ spatial_gene_plots <- function(gene.table, counts, ids, img = NULL, plot.params 
     pdf(filepath, width = 10, height = 10)
     for(g in rownames(gene.table)[1:min(n.genes, nrow(gene.table))]){
         if(!is.null(img) && !is.null(plot.params)){
-            p <- spatial_plot(rownames(counts), ids, counts[,g], img, "continuous", plot.params, spot.col = colour, title = g)
+            p <- spatial_plot(
+                barcodes = rownames(counts), 
+                ids = ids, 
+                cluster = counts[,g], 
+                img = img, 
+                mode = "continuous", 
+                plot.params = plot.params, 
+                spot.col = colour, 
+                title = g
+                )
         }else{
-            p <- spatial_plot(rownames(counts), ids, counts[,g], NULL, "continuous", title = g)
+            p <- spatial_plot(
+                barcodes = rownames(counts), 
+                ids = ids, 
+                cluster = counts[,g], 
+                img = NULL, 
+                mode = "continuous", 
+                title = g
+                )
         }
         plot(p)
     }
