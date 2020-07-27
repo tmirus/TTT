@@ -16,12 +16,14 @@
 #' ST barcode files
 #' @param dup.sep character, optional; if duplicate gene names are distinguished by e.g. _1, _2
 #' at the end, pass dup.sep="_" to try to combine these columns
+#' @param n.gene.cutoff integer > 0, number of genes that need to be expressed in a spots in order 
+#' for the spot not to be removed from the data
 #' @return list with two entries:\cr
 #' 1) counts - count matrix
 #' 2) ids - barcode data frame assigning spatial positions to spots
 #' @export
 
-process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = NULL){
+process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = NULL, n.gene.cutoff = 100){
   if(is.character(counts)){
     if(file.exists(counts)){
       counts <- as.matrix(read.table(counts, check.names = FALSE))
@@ -40,6 +42,9 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
   if(nrow(counts) >= ncol(counts) && !force_counts){
     stop("There seem to be more spots than genes. Please check matrix
          orientation or set force_counts = TRUE to use the data as it is.")
+  }
+  if(n.gene.cutoff <= 0 || round(n.gene.cutoff) != n.gene.cutoff){
+    stop("Invalid value for 'n.gene.cutoff'. Must be integer > 0.")
   }
   if(!is.null(ids)){
     if(! (is.matrix(ids) || is.data.frame(ids)) ){
@@ -149,5 +154,12 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
       counts <- counts[,-gene.idx[-1]]
     }
   }
+  
+  # remove spots with exceptionally low number of expressed genes
+  n.genes <- apply(counts, 1, function(x) sum(x>0))
+  if(any(n.genes) <= 100){
+    counts <- counts[-which(n.genes < 100),]
+  }
+  
   return(list(counts = counts, ids = ids))
 }
