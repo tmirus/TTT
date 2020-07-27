@@ -6,6 +6,7 @@
 #' @param n integer > 1, the number of genes OrderedList takes into account at both ends of the ranked lists
 #' @param alpha numeric 0 < alpha; weight for genes in OrderedList. The larger alpha, less genes toward the middle of the lists are taken into account
 #' @param ncores integer > 0, number of threads to use
+#' @param .tsne logical, should tSNE plots be generated to visualize the clustering? default TRUE
 #' @details For more details on n and alpha see OrderedList package
 #' @return list containing 3 elements:\cr
 #' 1) scores - score matrix containing pairwise OrderedList-scores for all spots\cr
@@ -13,7 +14,7 @@
 #' 3) tsne.scores - ggplot object, tSNE plot of score matrix coloured by clustering\cr
 #' 4) tsne.counts - ggplot object, tSNE plot of count matrix coloured by clustering
 #' @export
-cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 4, score.mat = NULL){
+cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 4, score.mat = NULL, .tsne = TRUE){
 	suppressMessages(library(parallel, quietly = TRUE))
 	suppressMessages(library(doParallel, quietly = TRUE))
 	suppressMessages(library(foreach, quietly = TRUE))
@@ -57,19 +58,24 @@ cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 
 	clustering <- cluster::pam(score.mat, nc)$clustering
 
 	# create tSNE plots
+	if(.tsne){
     tsne <- Rtsne::Rtsne(score.mat, check_duplicates = FALSE)
-	tsne.counts <- Rtsne::Rtsne(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:min(500, nrow(counts))],]), check_duplicates = F)
-	
-	df <- data.frame(tsne$Y, clustering)
-	colnames(df) <- c("tSNE1", "tSNE2", "cluster")
-	df$cluster <- as.factor(df$cluster)
-	
-	df.counts <- data.frame(tsne.counts$Y, clustering)
-	colnames(df.counts) <- c("tSNE1", "tSNE2", "cluster")
-	df.counts$cluster <- as.factor(df.counts$cluster)
-
-	p1 <- ggplot(df, aes(x=tSNE1, y=tSNE2, col = cluster)) + geom_point()
-	p2 <- ggplot(df.counts, aes(x = tSNE1, y = tSNE2, col = cluster)) + geom_point()
+  	tsne.counts <- Rtsne::Rtsne(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:min(500, nrow(counts))],]), check_duplicates = F)
+  	
+  	df <- data.frame(tsne$Y, clustering)
+  	colnames(df) <- c("tSNE1", "tSNE2", "cluster")
+  	df$cluster <- as.factor(df$cluster)
+  	
+  	df.counts <- data.frame(tsne.counts$Y, clustering)
+  	colnames(df.counts) <- c("tSNE1", "tSNE2", "cluster")
+  	df.counts$cluster <- as.factor(df.counts$cluster)
+  
+  	p1 <- ggplot(df, aes(x=tSNE1, y=tSNE2, col = cluster)) + geom_point()
+  	p2 <- ggplot(df.counts, aes(x = tSNE1, y = tSNE2, col = cluster)) + geom_point()
+	}else{
+	  p1 <- NULL
+	  p2 <- NULL
+	}
 
 	return(list(scores = score.mat, clustering = clustering, tsne.scores = p1, tsne.counts = p2))
 }
