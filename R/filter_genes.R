@@ -4,42 +4,61 @@
 #' @param lasso.data output of build_lassos function
 #' @return data frame containing gene name, cluster with lowest p-value, lowest p-value and up/downregulation information for each gene
 #' @export
-filter_genes <- function(analysis.data, lasso.data){
-    differential.genes <- analysis.data$differential_genes
-    specific.genes <- names(analysis.data$specific)
-    lls <- lasso.data$lls
+filter_genes <- function(deg.table, entropies, lasso.data = NULL){
+    differential.genes <- deg.table
+    specific.genes <- names(entropies)
 
     # only differentially expressed genes with low entropy are considered
     if(any(rownames(differential.genes) %in% specific.genes)){
         differential.genes <- differential.genes[which(rownames(differential.genes) %in% specific.genes),]
     }
 
-    # plot lls gene ranks vs combined gene ranks
-    lls <- lls[rownames(differential.genes)]
-    lls <- sort(lls)
+    # genes in data frame are already in order
     
-    lls_ranks <- 1:length(lls)
-    names(lls_ranks) <- names(lls)
-    
-    dsg_ranks <- 1:length(lls)
+    # create two or three gene lists
+    # in all lists genes are in same order, but their assigned scores represent
+    # their position in the ranking of that score
+    # total ranking is the sum of all rankings
+    dsg_ranks <- 1:nrow(differential.genes)
     names(dsg_ranks) <- rownames(differential.genes)
-    dsg_ranks <- dsg_ranks[names(lls)]
+    
+    specific.ranks <- 1:length(dsg_ranks)
+    names(specific.ranks) <- names(sort(entropies[names(dsg_ranks)]))
+    specific.ranks <- specific.ranks[names(dsg_ranks)]
+    
+    # if lasso data is available include lls in the ranking
+    if(!is.null(lasso.data)){
+        # extract lls data for genes in the count matrix
+        lls <- lasso.data$lls
+        lls <- lls[names(dsg_ranks)]
+        lls_ranks <- 1:length(lls)
+        names(lls_ranks) <- names(lls)[order(lls)]
+        lls_ranks <- lls_ranks[names(dsg_ranks)]
 
-    specific.ranks <- 1:length(lls)
-    names(specific.ranks) <- names(sort(analysis.data$specific[names(lls)]))
-    specific.ranks <- specific.ranks[names(lls)]
+        
+        ranks <- lls_ranks + dsg_ranks + specific.ranks
+        names(ranks) <- names(dsg_ranks)
+        ranks <- sort(ranks)
+    }else{
+        ranks <- dsg_ranks + specific.ranks
+        names(ranks) <- names(dsg_ranks)
+        ranks <- sort(ranks)
+    }
 
-    ranks <- lls_ranks + dsg_ranks + specific.ranks
-    names(ranks) <- names(lls)
-    ranks <- sort(ranks)
 
-    #hist(lls, breaks = 100, main = "lls dsg")
-    #plot(lls_ranks, dsg_ranks, xlab = "rank(LLS)", ylab = "rank(DSG)", main = "relation between LLS and DSG")
-    #dev.off()
-
-    differential.genes <- differential.genes[names(lls)[which(lls < summary(lls)[2])],]
+    if(!is.null(lasso.data)){
+        # keep only genes with fitting models
+        differential.genes <- differential.genes[names(lls)[which(lls < summary(lls)[2])],]
+    }
+    
     ranks <- ranks[which(names(ranks) %in% rownames(differential.genes))]
     differential.genes <- differential.genes[names(ranks),]
+    
+    if(!is.null(lasso.data)){
+        differential.genes <- cbind(differential.genes, lls = lls[names(ranks)], entropy = entropies[names(ranks)])
+    }else{
+        differential.genes <- cbind(differential.genes, entropy = entropies[names(ranks)])
+    }
 
     return(differential.genes)
 }

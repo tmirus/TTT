@@ -8,13 +8,13 @@
 #' @param clustering list containing clustering information as returned by cluster_counts_OL (numeric vector assigning spots to clusters)
 #' @param sig.level significance level for the t-test between clusters; genes with p-values above this threshold
 #' will be removed from output; default 0.05
-#' @return list with 3 entries:\cr
-#' 1) specific - character vecor containing names of genes that are specific to any cluster\cr
-#' 2) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes\cr
-#' 3) dsg - differential genes reduced to genes that are also contained in 'specific'
+#' @param lasso.data output of build_lassos function
+#' @return list with 2 entries:\cr
+#' 1) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes. Ordered by gene rank.\cr
+#' 2) gene.cluster.table - data frame containing for each gene in differential.genes the p-value for differential expression in each cluster
 #' @export
 
-analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
+analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.data = NULL){
     # find cluster-specific genes by calculating total RNA per cluster and gene
     cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
     colnames(cluster.libs) <- colnames(counts)
@@ -132,10 +132,11 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05){
     gene.info$pVal <- as.numeric(as.character(gene.info$pVal))
     gene.info$regulation <- as.numeric(as.character(gene.info$regulation))
     rownames(gene.info) <- as.character(gene.info$gene)
+   
+    gene.info <- filter_genes(gene.info, specific, lasso.data)
 
     return(list(
-        specific_genes = specific, 
         differential_genes = gene.info,
-        gene.cluster.table = gene.table
+        gene.cluster.table = gene.table[rownames(gene.info),]
 	))
 }
