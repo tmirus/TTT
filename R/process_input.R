@@ -53,13 +53,7 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
     if(ncol(ids) != 2){
       stop("ids must contain two columns (X and Y)")
     }
-    # fill ids to range from 2 to 32/34 in Y/X-direction
-    ids <- fill_ids(ids)
     
-    if(! all(range(ids) == c(2,34) && !force_indices) ){
-      stop("The range of indices in ids does not match typical ST barcode files (index range 2 - 34). 
-           Set force_indices = TRUE to proceed anyways. This might lead to unexpected behaviour.")
-    }
     if(nrow(ids) < nrow(counts)){
       stop("ids does not have enough rows to contain spatial information for all spots in counts.")
     }
@@ -74,7 +68,7 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
   
   # prepare either input ids or convert rownames to ids data frame
   if(!is.null(ids)){
-    if(!all(colnames(ids) == c("X", "Y"))){ 
+    if(is.null(colnames(ids)) || !all(colnames(ids) == c("X", "Y"))){ 
       # reorder the ids data frame to have x-coordinates in second and
       # y-coordinate in first column
       input.ids <- ids
@@ -89,8 +83,10 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
       }else{
         stop("Dimension of a ST slide is 34x32. X and Y in the id matrix have the same dimension.")
       }
+      print("IDS")
       ids <- data.frame(Y = input.ids[, y_ind], X = input.ids[, x_ind])
       rownames(ids) <- rownames(input.ids)
+      print(str(ids))
     }
   }else{
     # extract ids from rownames of counts and create a data frame
@@ -118,13 +114,21 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
     }
     rownames(ids) <- rownames(counts)
   }
-  
+  ids <- fill_ids(ids)
+if(! all(range(ids) == c(2,34) && !force_indices) ){
+      stop("The range of indices in ids does not match typical ST barcode files (index range 2 - 34). 
+           Set force_indices = TRUE to proceed anyways. This might lead to unexpected behaviour.")
+    }
+
   # adjust coordinates for compatibility 
   # with the package if possible
   ids[,"X"] <- ids[,"X"] + (2 - min(ids[,"X"]))
-  ids[,"Y"] <- ids[,"Y"] + (2 - min(ids[,"X"]))
-  
-  if(!all(range(ids[,1]) == c(2, 32)) || !all(range(ids[,2]) == c(2,34)) ){
+  ids[,"Y"] <- ids[,"Y"] + (2 - min(ids[,"Y"]))
+ 
+  print(str(ids))
+  print(range(ids[,"X"]))
+ print(range(ids[,"Y"])) 
+  if(!all(range(ids[,"Y"]) == c(2, 32)) || !all(range(ids[,"X"]) == c(2,34)) ){
     stop("Could not adjust data to conform to package standards. Please check your input.")
   }
 
@@ -157,7 +161,7 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
   
   # remove spots with exceptionally low number of expressed genes
   n.genes <- apply(counts, 1, function(x) sum(x>0))
-  if(any(n.genes) <= 100){
+  if(any(n.genes <= 100)){
     counts <- counts[-which(n.genes < 100),]
   }
   
