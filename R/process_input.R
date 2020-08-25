@@ -8,6 +8,7 @@
 #' corresponding tissue slide and the number of spots along the X-axis is 
 #' higher than the number of spots on the Y-axis.
 #' optional if spatial information is contained in rownames of counts
+#' @param img_path character, optional. file path to ST slide image
 #' @param separate_by only necessary if spatial information is given as
 #' in the output of ST Pipeline (Navarro et al.), e.g. 32x2; default x
 #' @param force_counts logical, in case there are less genes than spots this needs to be TRUE; 
@@ -15,15 +16,17 @@
 #' @param force_indices logical, in case the range of x and y indices is not the same as in the
 #' ST barcode files
 #' @param dup.sep character, optional; if duplicate gene names are distinguished by e.g. _1, _2
-#' at the end, pass dup.sep="_" to try to combine these columns
+#' at the end, pass dup.sep="_" to try to combine these columns; default "_"
 #' @param n.gene.cutoff integer > 0, number of genes that need to be expressed in a spots in order 
 #' for the spot not to be removed from the data
-#' @return list with two entries:\cr
+#' @param verboselogicall, default TRUE
+#' @return list with three entries:\cr
 #' 1) counts - count matrix
 #' 2) ids - barcode data frame assigning spatial positions to spots
+#' 3) img - image (EBImage object), if img_path is supplied
 #' @export
 
-process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = NULL, n.gene.cutoff = 100){
+process_input <- function(counts, ids = NULL, img_path = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = "_", n.gene.cutoff = 100, verbose = TRUE){
   if(is.character(counts)){
     if(file.exists(counts)){
       counts <- as.matrix(read.table(counts, check.names = FALSE))
@@ -65,7 +68,12 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
       stop("Splitting character split_by does not seem to be present in all spot names.")
     }
   }
-  
+  if(!is.null(img_path)){
+	  img <- read_image(img_path)
+  }else{
+	  img <- NULL
+  }
+ 
   # prepare either input ids or convert rownames to ids data frame
   if(!is.null(ids)){
     if(is.null(colnames(ids)) || !all(colnames(ids) == c("X", "Y"))){ 
@@ -83,10 +91,8 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
       }else{
         stop("Dimension of a ST slide is 34x32. X and Y in the id matrix have the same dimension.")
       }
-      print("IDS")
       ids <- data.frame(Y = input.ids[, y_ind], X = input.ids[, x_ind])
       rownames(ids) <- rownames(input.ids)
-      print(str(ids))
     }
   }else{
     # extract ids from rownames of counts and create a data frame
@@ -114,6 +120,12 @@ process_input <- function(counts, ids = NULL, separate_by = "x", force_counts = 
     }
     rownames(ids) <- rownames(counts)
   }
+  if(max(ids[,"X"]) > 34){
+	  ids[,"X"] <- ids[,"X"] + (34 - max(ids[,"X"]))
+  }
+  if(max(ids[,"Y"]) > 32){
+	  ids[,"Y"] <- ids[,"Y"] + (32 - max(ids[,"Y"]))
+  }
   ids <- fill_ids(ids)
 if(! all(range(ids) == c(2,34) && !force_indices) ){
       stop("The range of indices in ids does not match typical ST barcode files (index range 2 - 34). 
@@ -125,9 +137,6 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
   ids[,"X"] <- ids[,"X"] + (2 - min(ids[,"X"]))
   ids[,"Y"] <- ids[,"Y"] + (2 - min(ids[,"Y"]))
  
-  print(str(ids))
-  print(range(ids[,"X"]))
- print(range(ids[,"Y"])) 
   if(!all(range(ids[,"Y"]) == c(2, 32)) || !all(range(ids[,"X"]) == c(2,34)) ){
     stop("Could not adjust data to conform to package standards. Please check your input.")
   }
@@ -147,7 +156,7 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
     }))
     colnames(counts) <- gene.names
   }
-  cat("Duplicates found:", sum(duplicated(colnames(counts))), "\nRemoving...\n")
+  if(verbose) cat("Duplicates found:", sum(duplicated(colnames(counts))), "\nRemoving...\n")
   
   # find all duplicate names, iterate over them, sum them up and remove superfluous columns
   if(sum(duplicated(colnames(counts))) > 0){
@@ -165,5 +174,5 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
     counts <- counts[-which(n.genes < 100),]
   }
   
-  return(list(counts = counts, ids = ids))
+  return(list(counts = counts, ids = ids, img = img))
 }
