@@ -17,5 +17,5 @@ read_image <- function(path){
 		return(NULL)
 	}
 
-	return(resize(img, h = 1000, w = 1000))
+	return(EBImage::resize(img, h = 1000, w = 1000))
 }
