@@ -72,7 +72,7 @@ visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filep
     heatmap.full.df$spot <- as.numeric(as.character(heatmap.full.df$spot))
 
     heatmap.plt <- ggplot(heatmap.df, aes(x=cluster, y=gene, fill = expression)) + 
-	    		geom_tile() + 
+	    		geom_tile(na.rm = TRUE) + 
 			theme(axis.text.y = element_blank()) + 
 			xlab("cluster") + 
 			ylab("gene") +
@@ -81,7 +81,7 @@ visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filep
     
     heatmap.full.plt <- ggplot(heatmap.full.df, 
 			       aes(x=spot, y=gene, fill = expression)) + 
-			geom_tile() + 
+			geom_tile(na.rm = TRUE) + 
 			theme(axis.text.y = element_blank()) + 
 			xlab("spot") + 
 			ylab("gene") +

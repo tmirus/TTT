@@ -33,7 +33,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       }
 
       # full solution path calculation
-      tmp_lasso <- genlasso::fusedlasso2d(tmp_matrix,gamma = gamma)
+      tmp_lasso <- genlasso::fusedlasso2d(tmp_matrix,gamma = gamma,approx=F)
       
       # calculate BICs for all possible models
       BIC_list <- calc_BICs(tmp_lasso)
@@ -78,7 +78,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       colnames(tmp_fits_set) <- gene_list
       names(lls_set) <- gene_list
     }
-    return(list(counts = tmp_fits_set, #fits = fits_set, 
+    return(list(counts = tmp_fits_set,
                 BICs = BICs_set, 
                 lls = lls_set)
            )
