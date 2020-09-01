@@ -17,7 +17,7 @@
 #' @return ggplot2 object (plot)
 #' @export 
 
-spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32), spot.col = "black", title = "", indicator = NULL){
+spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0), spot.col = "black", title = "", indicator = NULL){
     if(!mode %in% c("discrete", "continuous")){
       stop("Invalid value for parameter 'mode'. Must be one of 'discrete' or 'continuous'.")
     }
@@ -34,7 +34,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     }
   
     theme_transparent <- theme(
-        panel.background = element_rect(fill = "transparent"), # bg of the panel
+        #panel.background = element_rect(fill = "transparent"), # bg of the panel
         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
         panel.grid.major = element_blank(), # get rid of major grid
         panel.grid.minor = element_blank(), # get rid of minor grid
@@ -58,7 +58,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     df <- c()
     # convert ids to image coordinates
     for(i in 1:length(barcodes)){
-        temp <- c(ox+(ids[barcodes[i],"X"]-2)*(1000-2*ox)/nx,oy+(ids[barcodes[i],"Y"]-2)*(1000-2*oy)/ny, cluster[i])
+        temp <- c(ox+(ids[barcodes[i],"X"]-2)*(1000-ox)/nx,oy+(ids[barcodes[i],"Y"]-2)*(1000-oy)/ny, cluster[i])
         df <- rbind(df, temp)
     }
     df <- as.data.frame(df)
@@ -94,6 +94,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
         gob <- grid::rasterGrob(img)
         p <- p + annotation_custom(gob,-1000,0,0,1000)
     }
+    #suppressWarnings({
     p <- p + 
       geom_point(na.rm = TRUE) + 
       ggtitle(title) + 
@@ -101,5 +102,6 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
       ylab("") + 
       theme_transparent + 
       coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
+	i#    })
     return(p)
 }

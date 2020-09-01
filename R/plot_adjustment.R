@@ -19,7 +19,7 @@ plot_adjustment <- function(ids, img, nx = 35, ny = 33, ox = 0, oy = 0){
 		img, 
 		"discrete", 
 		list(nx = nx, ny = ny, ox = ox, oy = oy)
-		)
+		) + theme(legend.position = "none")
     )
     return(list(nx = nx, ny = ny, ox = ox, oy = oy))
 }
