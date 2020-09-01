@@ -23,6 +23,11 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
     for(cl in rownames(cluster.libs)){
         cluster.libs[cl,] <- colSums(counts[which(clustering == as.numeric(cl)),,drop=F])
     }
+
+    # cannot handle negative expression for entropy
+    if(any(cluster.libs < 0)){
+	    cluster.libs <- cluster.libs - min(cluster.libs)
+    }
     # reduce to genes that are not 0 overall
     cluster.libs <- cluster.libs[, which(colSums(cluster.libs) > 0)]
     # scale to 1
@@ -43,7 +48,6 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
     if(any(is.na(specific))){
     	specific <- specific[-which(is.na(specific))]
     }
-
     specific <- specific[which(specific <= summary(specific)[3])]
    
     # implement testing with multtest for differentially expressed genes for each cluster
@@ -51,7 +55,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
     test.results <- list()
     for(cl in rownames(cluster.libs)){
         # create temporary count matrix (transposed for multtest) and class labels
-	    temp.counts <- log2(t(counts[c(which(clustering == cl),which(clustering != cl)),])+1)
+	    temp.counts <- t(counts[c(which(clustering == cl),which(clustering != cl)),])
         labs <- c(rep(0,length(which(clustering == cl))), rep(1,length(which(clustering != cl))))
 	    # calculate t-scores, p-values and adjust
         t.scores <- multtest::mt.teststat(temp.counts, labs, test = "t")
@@ -119,20 +123,36 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
     for(i in 1:nrow(gene.table)){
         g <- rownames(gene.table)[i]
         p <- min(gene.table[i,])
-        cl <- clusters[which.min(gene.table[i,])]
-	if(length(cl) > 0){
-		# up-/downregulation
-        	reg <- sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))
-        	gene.info <- rbind(gene.info,
-                	           c(g, cl, p, reg))
-	}
+  	
+    # assign genes to downregulated clusters only if that p-value is less than half of the
+    # maximum upregulated value
+    regulations <- sapply(clusters, function(cl){sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))})
+  	up.max <- max(gene.table[i,which(regulations > 0)])
+  	down.max <- max(gene.table[i, which(regulations < 0)])
+  	if(length(down.max) > 0 & length(up.max) > 0){
+  		if(2 * down.max < up.max){
+  			cl.which <- which(gene.table[i,] == down.max)
+  			cl <- clusters[intersect(which(regulations < 0), cl.which)]
+  		}else{
+  			cl.which <- which(gene.table[i,] == up.max)
+  			cl <- clusters[intersect(which(regulations > 0), cl.which)]
+  		}
+  	}else{
+          	cl <- clusters[which.min(gene.table[i,])]
+  	}
+  	if(length(cl) > 0){
+  		# up-/downregulation
+          	reg <- sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))
+          	gene.info <- rbind(gene.info,
+                  	           c(g, cl, p, reg))
+  	}
     }
     gene.info <- as.data.frame(gene.info)
     colnames(gene.info) <- c("gene", "cluster", "pVal", "regulation")
     gene.info$pVal <- as.numeric(as.character(gene.info$pVal))
     gene.info$regulation <- as.numeric(as.character(gene.info$regulation))
     rownames(gene.info) <- as.character(gene.info$gene)
-   
+
     gene.info <- filter_genes(gene.info, specific, lasso.data)
 
     return(list(
