@@ -14,7 +14,7 @@
 #' 3) heatmap.plt - simplified heatmap, depicting mean expression of all interesting genes in the different clusters\cr
 #' 4) heatmap.full.plt - heatmap visualizing expression of all interesting genes in all spots\cr
 #' @export
-visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filepath = NULL, plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)){
+visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filepath = NULL, plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0)){
     # remove genes with 0 variance for the heatmaps
     if(any(apply(counts, 2, var) == 0)){
 	    counts <- counts[,-which(apply(counts, 2, var) == 0)]
@@ -39,6 +39,7 @@ visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filep
         cl <- colnames(heatmap.mat)[i]
         heatmap.df[((i-1)*length(all.genes)+1):(i*length(all.genes)),] <- cbind(cl, all.genes, colMeans(counts[which(clustering == as.numeric(cl)), all.genes, drop = F]))
     }
+    rm(counts)
 
     heatmap.counts <- heatmap.counts[order(clustering),]
     heatmap.full.df <- matrix("", nrow = length(all.genes)*nrow(heatmap.counts), ncol = 3)
@@ -71,7 +72,7 @@ visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filep
     heatmap.full.df$expression <- as.numeric(as.character(heatmap.full.df$expression))
     heatmap.full.df$spot <- as.numeric(as.character(heatmap.full.df$spot))
 
-    heatmap.plt <- ggplot(heatmap.df, aes(x=cluster, y=gene, fill = expression)) + 
+    heatmap.plt <- ggplot(heatmap.df, aes(x=cluster, y=gene, fill = expression, col = expression)) + 
 	    		geom_tile(na.rm = TRUE) + 
 			theme(axis.text.y = element_blank()) + 
 			xlab("cluster") + 
@@ -80,7 +81,7 @@ visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filep
 			scale_y_discrete(limits = genes)
     
     heatmap.full.plt <- ggplot(heatmap.full.df, 
-			       aes(x=spot, y=gene, fill = expression)) + 
+			       aes(x=spot, y=gene, fill = expression, col = expression)) + 
 			geom_tile(na.rm = TRUE) + 
 			theme(axis.text.y = element_blank()) + 
 			xlab("spot") + 

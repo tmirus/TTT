@@ -3,7 +3,7 @@
 #' @param gene.table data frame containing interesting genes, as returned by filter_genes (or entry differential.genes of analyze_clustering output)
 #' @param counts non-negative numeric matrix containing gene expression for all spots (spots x genes)
 #' @param ids barcode data frame assigning spatial coordinates to all spots; column names 'X' and 'Y'
-#' @param img ST image (EBImage object) if available. Will be used as plotting background. If not available, leave default NULL.
+#' @param img ST image (EBImage object) if available. Will be used as plotting background if plot.params is provided. If not available, leave default NULL.
 #' @param plot.params list created by plot_adjustment; only needed if img is provided
 #' @param n.genes integer, number of genes to be plotted (starting from the top of gene.table)
 #' @param filepath character specifying the directory in which the output file ('spatial_genes.pdf') should be stored
