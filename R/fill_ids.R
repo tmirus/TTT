@@ -18,7 +18,9 @@ fill_ids <- function(ids) {
             }
         }
     }
-    rownames(add_ids) <- rnames
-    ids <- as.data.frame(rbind(as.matrix(ids), as.matrix(add_ids)))
+    if(length(add_ids) > 0){
+    	rownames(add_ids) <- rnames
+    	ids <- as.data.frame(rbind(as.matrix(ids), as.matrix(add_ids)))
+    }
     return(ids)
 }

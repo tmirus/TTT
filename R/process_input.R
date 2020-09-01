@@ -19,14 +19,16 @@
 #' at the end, pass dup.sep="_" to try to combine these columns; default "_"
 #' @param n.gene.cutoff integer > 0, number of genes that need to be expressed in a spots in order 
 #' for the spot not to be removed from the data
-#' @param verboselogicall, default TRUE
+#' @param verbose logical, default TRUE
+#' @param normalize logical, default FALSE
 #' @return list with three entries:\cr
 #' 1) counts - count matrix
 #' 2) ids - barcode data frame assigning spatial positions to spots
 #' 3) img - image (EBImage object), if img_path is supplied
+#' 4) counts.normalized - normalized counts matrix, if normalize is true; NULL else
 #' @export
 
-process_input <- function(counts, ids = NULL, img_path = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = "_", n.gene.cutoff = 100, verbose = TRUE){
+process_input <- function(counts, ids = NULL, img_path = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = "_", n.gene.cutoff = 100, verbose = TRUE, normalize = FALSE){
   if(is.character(counts)){
     if(file.exists(counts)){
       counts <- as.matrix(read.table(counts, check.names = FALSE))
@@ -174,5 +176,11 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
     counts <- counts[-which(n.genes < 100),]
   }
   
-  return(list(counts = counts, ids = ids, img = img))
+  if(normalize){
+    counts.normalized <- normalize_counts(counts)
+  }else{
+    counts.normalized <- NULL
+  }
+  
+  return(list(counts = counts, ids = ids, img = img, counts.normalized = counts.normalized))
 }
