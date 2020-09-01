@@ -22,119 +22,168 @@
 #' 4) clustering.tsne tSNE embedding of spots coloured by classification (background/tissue)
 #' @export
 
-remove_background <- function(img, nx = 35, ny=33, ids, counts, threshold = 0.7, plot.params = NULL){
-  # reduce to one pixel per spot
-  img <- EBImage::channel(img, "gray")
-  img <- EBImage::resize(img, 1000, 1000)
+remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold = 0.7, plot.params = NULL){
+  if(!is.null(img)){
+    # reduce to one pixel per spot
+    img <- EBImage::channel(img, "gray")
+    img <- EBImage::resize(img, 1000, 1000)
+    
   
-
-  if(!is.null(plot.params)){
-    nx <- plot.params$nx
-    ny <- plot.params$ny
-    ox <- plot.params$ox
-    oy <- plot.params$oy
-    dx <- (1000-2*ox)/nx
-    dy <- (1000-2*oy)/ny
-
-    ox1 <- as.integer(ox)
-    ox2 <- as.integer(1000-ox)
-    oy1 <- as.integer(oy)
-    oy2 <- as.integer(1000-oy)
-
-    img <- img[ox1:ox2, oy1:oy2]
-  }
+    if(!is.null(plot.params)){
+      nx <- plot.params$nx
+      ny <- plot.params$ny
+      ox <- plot.params$ox
+      oy <- plot.params$oy
+      dx <- (1000-2*ox)/nx
+      dy <- (1000-2*oy)/ny
   
-  img.reduced <- EBImage::resize(img, w=nx,h=ny)
-  names <- rownames(counts)
-
-  # blur to reduce the risk of removing spots within tissue
-  for(x in 1:nx){
-    for(y in 1:ny){
-      x.neighbours <- seq(x-1,x+1)
-      y.neighbours <- seq(y-1,y+1)
-      if(any(x.neighbours < 1 | x.neighbours > nx)) 
-        x.neighbours <- x.neighbours[-which(x.neighbours < 1 | x.neighbours > nx)]
-      if(any(y.neighbours < 1 | y.neighbours > ny)) 
-        y.neighbours <- y.neighbours[-which(y.neighbours < 1 | y.neighbours > ny)]
-      EBImage::imageData(img.reduced)[x,y] <- mean(EBImage::imageData(img.reduced)[x.neighbours, y.neighbours])
+      ox1 <- as.integer(ox)
+      ox2 <- as.integer(1000-ox)
+      oy1 <- as.integer(oy)
+      oy2 <- as.integer(1000-oy)
+  
+      img <- img[ox1:ox2, oy1:oy2]
     }
-  }
+    
+    img.reduced <- EBImage::resize(img, w=nx,h=ny)
+    names <- rownames(counts)
   
-  # select the spots to remove
-  EBImage::imageData(img.reduced)[EBImage::imageData(img.reduced) > threshold*max(EBImage::imageData(img.reduced))] <- 1
-  to.remove <- t(matrix(EBImage::imageData(img.reduced) == 1, nrow=nx))
-  
-  # store in more compatible format
-  spots.to.keep <- c()
-  for(x in 1:nx){
-    for(y in 1:ny){
-      if(!to.remove[y,x]) spots.to.keep <- rbind(spots.to.keep, c(max(ids[,"X"])-x,max(ids[,"Y"])-y))
-    }
-  }
-  spots.to.keep <- as.data.frame(spots.to.keep)
-  colnames(spots.to.keep) <- c("X", "Y")
-  
-  # return the original image with blanks where spots were removed
-  dx <- dim(img)[1] / nx
-  dy <- dim(img)[2] / ny
-  for(x in 1:nx){
-    for(y in 1:ny){
-      if(to.remove[y,x]){
-        EBImage::imageData(img)[(as.integer((x-1)*dx+1)):as.integer(x*dx), (as.integer((y-1)*dy+1)):as.integer(y*dy)] <- 1
+    # blur to reduce the risk of removing spots within tissue
+    for(x in 1:nx){
+      for(y in 1:ny){
+        x.neighbours <- seq(x-1,x+1)
+        y.neighbours <- seq(y-1,y+1)
+        if(any(x.neighbours < 1 | x.neighbours > nx)) 
+          x.neighbours <- x.neighbours[-which(x.neighbours < 1 | x.neighbours > nx)]
+        if(any(y.neighbours < 1 | y.neighbours > ny)) 
+          y.neighbours <- y.neighbours[-which(y.neighbours < 1 | y.neighbours > ny)]
+        EBImage::imageData(img.reduced)[x,y] <- mean(EBImage::imageData(img.reduced)[x.neighbours, y.neighbours])
       }
     }
-  }
-  if(!is.null(ids) && !is.null(names)){
-    spots <- sapply(names,
-                    function(x){
-                      if(length(intersect(which(spots.to.keep[,"X"] == ids[x,2]), which(spots.to.keep[,"Y"] == ids[x,1])))>0){
-                        return(TRUE)
-                      }else{
-                        return(FALSE)
-                      }
-                    }
-    )
-    spots <- names(spots)[spots]
-    spots.to.keep <- spots
-  }
-  ids.reduced <- ids[spots,]
-  ids.reduced <- clean_ids(ids.reduced)
-  spots.to.keep <- rownames(ids.reduced)
-
-  # tSNE embedding
-  tsne <- Rtsne::Rtsne(counts, check_duplicates = F)$Y
-  # create comparatively large number of clusters
-  clustering <- cluster::pam(tsne, 15)$clustering
-  names(clustering) <- rownames(counts)
-
-  # keep all clusters with a certain amount of spots in spots.to.keep
-  clusters.to.keep <- c()
-  for(cl in unique(clustering)){
-    if(sum(names(clustering[clustering == cl]) %in% spots.to.keep) > 0.75 * length(which(clustering == cl))){
-      clusters.to.keep <- c(clusters.to.keep, names(clustering[clustering == cl]))
+  
+    # select the spots to remove
+    EBImage::imageData(img.reduced)[EBImage::imageData(img.reduced) > threshold*max(EBImage::imageData(img.reduced))] <- 1
+    to.remove <- t(matrix(EBImage::imageData(img.reduced) == 1, nrow=nx))
+    
+    # store in more compatible format
+    spots.to.keep <- c()
+    for(x in 1:nx){
+      for(y in 1:ny){
+        if(!to.remove[y,x]) spots.to.keep <- rbind(spots.to.keep, c(max(ids[,"X"])-x,max(ids[,"Y"])-y))
+      }
     }
-  }
-
-  background.vec <- rep(0, nrow(counts))
-  names(background.vec) <- rownames(counts)
-  background.vec[clusters.to.keep] <- 1
-  background.vec <- as.factor(!as.logical(background.vec))
-  df <- data.frame(tsne, background.vec)
-  colnames(df) <- c("tSNE1", "tSNE2", "background")
-
-  p <- ggplot(df, aes(x=tSNE1, y = tSNE2, col = background)) + geom_point()
-
-
-  if(length(clusters.to.keep) > 0){
-    ids.reduced <- ids[clusters.to.keep,]
+    spots.to.keep <- as.data.frame(spots.to.keep)
+    colnames(spots.to.keep) <- c("X", "Y")
+    
+    # return the original image with blanks where spots were removed
+    dx <- dim(img)[1] / nx
+    dy <- dim(img)[2] / ny
+    for(x in 1:nx){
+      for(y in 1:ny){
+        if(to.remove[y,x]){
+          EBImage::imageData(img)[(as.integer((x-1)*dx+1)):as.integer(x*dx), (as.integer((y-1)*dy+1)):as.integer(y*dy)] <- 1
+        }
+      }
+    }
+    if(!is.null(ids) && !is.null(names)){
+      spots <- sapply(names,
+                      function(x){
+                        if(length(intersect(which(spots.to.keep[,"X"] == ids[x,2]), which(spots.to.keep[,"Y"] == ids[x,1])))>0){
+                          return(TRUE)
+                        }else{
+                          return(FALSE)
+                        }
+                      }
+      )
+      spots <- names(spots)[spots]
+      spots.to.keep <- spots
+    }
+    ids.reduced <- ids[spots,]
     ids.reduced <- clean_ids(ids.reduced)
+    spots.to.keep <- rownames(ids.reduced)
+  
+    # tSNE embedding
+    tsne <- Rtsne::Rtsne(counts, check_duplicates = F)$Y
+    # create comparatively large number of clusters
+    clustering <- cluster::pam(tsne, 15)$clustering
+    names(clustering) <- rownames(counts)
+  
+    # keep all clusters with a certain amount of spots in spots.to.keep
+    clusters.to.keep <- c()
+    for(cl in unique(clustering)){
+      if(sum(names(clustering[clustering == cl]) %in% spots.to.keep) > 0.75 * length(which(clustering == cl))){
+        clusters.to.keep <- c(clusters.to.keep, names(clustering[clustering == cl]))
+      }
+    }
+  
+    # vector containing background information by clustering
+    background.vec <- rep(0, nrow(counts))
+    names(background.vec) <- rownames(counts)
+    background.vec[clusters.to.keep] <- 1
+    background.vec <- as.factor(!as.logical(background.vec))
+    
+    # vector containing background information by brightness alone
+    background.temp <- rep(0, nrow(counts))
+    names(background.temp) <- rownames(counts)
+    background.temp[spots.to.keep] <- 1
+    background.temp <- as.factor(!as.logical(background.temp))
+    
+    # create plots
+    df <- data.frame(tsne, background.vec, clustering, background.temp)
+    colnames(df) <- c("tSNE1", "tSNE2", "background", "clustering", "background.temp")
+  
+    p <- ggplot(df, aes(x=tSNE1, y = tSNE2, col = background)) + geom_point()
+    p.bg <- ggplot(df, aes(x = tSNE1, y = tSNE2, col = as.factor(clustering))) + geom_point() + labs(col = "clustering")
+    p.bg.temp <- ggplot(df, aes(x = tSNE1, y = tSNE2, col = background.temp)) + geom_point() + labs(col = "background by brightness")
+  
+  
+    # reduce ids to the tissue spots
+    if(length(clusters.to.keep) > 0){
+      ids.reduced <- ids[clusters.to.keep,]
+      ids.reduced <- clean_ids(ids.reduced)
+    }
+    clusters.to.keep <- rownames(ids.reduced)
+  }else{
+	  # if no image available
+	  # cluster all spots using pam on tSNE embedding
+	  tsne <- Rtsne::Rtsne(counts, check_duplicates = F)$Y
+	  clustering <- cluster::pam(tsne, 20)$clustering
+	  clustering.coarse <- cluster::pam(counts, 2)$clustering
+
+	  # try to find a cutoff for total library size and/or entropy
+	  # to identify background spot
+	  
+	  # identify clusters with relatively low total expression per spot
+	  clust.mean.exp <- sapply(unique(clustering), function(x){mean(rowSums(counts[which(clustering == x),]))})
+	  clusters <- unique(clustering)[which(clust.mean.exp < summary(clust.mean.exp)[4])]
+
+	  # if the majority of spots within one of the coarse clusters is in the clusters with low expression, remove it
+	  if(length(which(clustering[which(clustering.coarse == 1)] %in% clusters)) / length(which(clustering.coarse == 1)) > 0.8 && length(which(clustering.coarse[which(clustering %in% clusters)] == 1)) / length(which(clustering %in% clusters)) > 0.9){
+		  spots.to.keep <- rownames(counts)[-which(clustering.coarse == 1)]
+	  }else{
+		 if(length(which(clustering[which(clustering.coarse == 2)] %in% clusters)) / length(which(clustering.coarse == 2)) > 0.8 && length(which(clustering.coarse[which(clustering %in% clusters)] == 2)) / length(which(clustering %in% clusters)) > 0.9){
+			 spots.to.keep <- rownames(counts)[-which(clustering.coarse == 2)]
+		 } 
+	  }
+	  background.vec <- rep(0, nrow(counts))
+	  names(background.vec) <- rownames(counts)
+	  background.vec[spots.to.keep] <- 1
+	  background.vec <- as.factor(!as.logical(background.vec))
+	  df <- data.frame(tsne, background.vec)
+	  colnames(df) <- c("tSNE1", "tSNE2", "background")
+  	p <- ggplot(df, aes(x = tSNE1, y = tSNE2, col = background)) + geom_point()
+  	p.bg <- NULL
+  	p.bg.temp <- NULL
+
+	  clusters.to.keep <- spots.to.keep
   }
-  clusters.to.keep <- rownames(ids.reduced)
 
   return(list(
     spots.to.keep = spots.to.keep, 
     spots.keep.clustering = clusters.to.keep, 
     image = img,
-    clustering.tsne = p
-	))
+    clustering.tsne = p,
+    fine.clustering.tsne = p.bg,
+    temp.clustering.tsne = p.bg.temp
+))
 }
