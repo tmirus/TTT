@@ -9,12 +9,19 @@
 #' @param sig.level significance level for the t-test between clusters; genes with p-values above this threshold
 #' will be removed from output; default 0.05
 #' @param lasso.data output of build_lassos function
+#' @param deg.weight
+#' @param lls.weight
+#' @param entropy.weight
+#' @param build.lasso
+#' @param gamma
+#' @param ncores
 #' @return list with 2 entries:\cr
 #' 1) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes. Ordered by gene rank.\cr
 #' 2) gene.cluster.table - data frame containing for each gene in differential.genes the p-value for differential expression in each cluster
 #' @export
 
-analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.data = NULL){
+analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4){
+    cat("calculating gene-wise entropy...\t")
     # find cluster-specific genes by calculating total RNA per cluster and gene
     cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
     colnames(cluster.libs) <- colnames(counts)
@@ -44,12 +51,16 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
         return(entropy)
     })
 
+    cat("done\n")
     names(specific) <- colnames(cluster.libs)
     if(any(is.na(specific))){
     	specific <- specific[-which(is.na(specific))]
     }
     specific <- specific[which(specific <= summary(specific)[3])]
-   
+    cat(length(specific), " genes passed entropy threshold\n", sep = "")
+
+
+    cat("testing for differential gene expression...\t")
     # implement testing with multtest for differentially expressed genes for each cluster
     # test each cluster against all other clusters at the same time
     test.results <- list()
@@ -73,6 +84,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
         p.vals <- sort(p.vals)
         test.results[[cl]] <- p.vals
     }
+    cat("done\n")
 
     # right now all.genes is actually all genes, but if a significance cutoff
     # were used above, this would be needed
@@ -80,6 +92,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
     all.genes <- all.genes[!is.na(all.genes)]
     all.genes <- unique(all.genes)
 
+    cat("Assign genes to clusters and remove insignificant genes...\t")
     # sort the clustering vector to have consistent order
     clusters <- sort(unique(clustering))
     # create a table with genes' p-value per cluster
@@ -153,7 +166,9 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
     gene.info$regulation <- as.numeric(as.character(gene.info$regulation))
     rownames(gene.info) <- as.character(gene.info$gene)
 
-    gene.info <- filter_genes(gene.info, specific, lasso.data)
+    cat("done\n")
+    cat(nrow(gene.info), " genes passed the significance threshold\n", sep = "")
+    gene.info <- filter_genes(gene.info, specific, lasso.data, deg.weight = deg.weight, lls.weight = lls.weight, entropy.weight = entropy.weight, build.lasso = build.lasso, ncores = ncores, gamma = gamma, counts = counts, ids = ids)
 
     return(list(
         differential_genes = gene.info,
