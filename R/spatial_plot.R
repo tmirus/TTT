@@ -34,7 +34,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     }
   
     theme_transparent <- theme(
-        #panel.background = element_rect(fill = "transparent"), # bg of the panel
+        panel.background = element_rect(fill = "transparent"), # bg of the panel
         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
         panel.grid.major = element_blank(), # get rid of major grid
         panel.grid.minor = element_blank(), # get rid of minor grid
@@ -76,14 +76,14 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
               )
             )
         }else{
-          p <- ggplot(df, aes(x=-as.numeric(as.character(X)), y=as.numeric(as.character(Y)),size=cluster), col = spot.col) +
+          p <- ggplot(df, aes(x=-as.numeric(as.character(X)), y=as.numeric(as.character(Y)),size=cluster)) +
             theme(legend.position = "none")
         }
     }else{
         df$cluster <- as.numeric(as.character(df$cluster))
         df[which(df$cluster == 0),"cluster"] <- NA
         if(indicator == "size"){
-          p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),size=cluster), col = spot.col) +
+          p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),size=cluster)) +
             theme(legend.position = "none")
         }else{
           p <- ggplot(df,aes(x=-as.numeric(as.character(X)),y=as.numeric(as.character(Y)),col=cluster))
@@ -103,5 +103,6 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
       theme_transparent + 
       coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
 	i#    })
+    if(indicator == "size") p <- p + geom_point(col = spot.col)
     return(p)
 }
