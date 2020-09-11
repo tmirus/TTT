@@ -8,5 +8,6 @@
 normalize_counts <- function(counts){
   # normalize using sctransform
   # make sure no output is produced
-  return(t(sctransform::vst(t(counts))[[1]]))
+  counts <- suppressWarnings(t(sctransform::vst(t(counts))[[1]]))
+  return(counts)
 }

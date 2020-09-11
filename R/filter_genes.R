@@ -6,17 +6,23 @@
 #' @param deg.weight weight of p-value in overall gene ranking; default 2
 #' @param lls.weight weight of lasso fit in overall gene ranking; default 3
 #' @param entropy.weight weight of entropy in overall gene ranking; default 1
+#' @param build.lasso logical, if lasso.data is NULL, should lasso models be calculated? default FALSE
+#' @param gamma numeric > 0, if build.lasso is TRUE, the gamma value passed to build_lassos; default 3
+#' @param ncores numeric > 0, the number of cores available for calculation; only used for lasso building, default 4
+#' @param counts
+#' @param ids
 #' @return data frame containing gene name, cluster with lowest p-value, lowest p-value, 
 #' up/downregulation information, lls fit (if lasso data was supplied) and entropy for each gene
 #' @export
 
-filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1){
+filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, counts = NULL, ids = NULL){
     specific.genes <- names(entropies)
 
     # only differentially expressed genes with low entropy are considered
     if(any(rownames(differential.genes) %in% specific.genes)){
         differential.genes <- differential.genes[which(rownames(differential.genes) %in% specific.genes),]
     }
+    cat(nrow(differential.genes), " genes in intersect of differential and specific genes\n", sep = "")
     # genes in data frame are already in order
 
     # create two or three gene lists
@@ -31,6 +37,18 @@ filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.w
     specific.ranks <- specific.ranks[names(dsg_ranks)]
     
     # if lasso data is available include lls in the ranking
+    if(is.null(lasso.data)){
+	    if(!build.lasso){
+        	ranks <- deg.weight * dsg_ranks + entropy.weight * specific.ranks
+        	names(ranks) <- names(dsg_ranks)
+        	ranks <- sort(ranks)
+	    }else{
+		    if(!is.null(counts) && !is.null(ids)){
+			    cat("Calculating lasso models for ", length(dsg_ranks), " genes...\n", sep = "")
+		    	lasso.data <- build_lassos(counts[, names(dsg_ranks)], ids, "", NULL, ncores, gamma)
+		    }
+	    }
+    }
     if(!is.null(lasso.data)){
         # extract lls data for genes in the count matrix
         lls <- lasso.data$lls
@@ -42,16 +60,13 @@ filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.w
         ranks <- lls.weight * lls_ranks + deg.weight * dsg_ranks + entropy.weight * specific.ranks
         names(ranks) <- names(dsg_ranks)
         ranks <- sort(ranks)
-    }else{
-        ranks <- deg.weight * dsg_ranks + entropy.weight * specific.ranks
-        names(ranks) <- names(dsg_ranks)
-        ranks <- sort(ranks)
     }
-
 
     if(!is.null(lasso.data)){
         # keep only genes with fitting models
+	    cat("Filtering for lls fit...\n")
         differential.genes <- differential.genes[names(lls)[which(lls < summary(lls)[4])],]
+	cat(nrow(differential.genes), " genes passed lls threshold\n", sep = "")
     }
     
     ranks <- ranks[which(names(ranks) %in% rownames(differential.genes))]
