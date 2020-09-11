@@ -56,13 +56,13 @@ cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 
 	}
 	
 	# cluster using pam with nc starting points
-	#clustering <- cluster::pam(score.mat, nc)$clustering
+	clustering <- cluster::pam(score.mat, nc)$clustering
 
 	# create UMAP plots
 	score.pca <- prcomp(score.mat)
     x <- score.pca$x[, 1:min(which(cumsum(score.pca$sdev**2) / sum(score.pca$sdev**2) > 0.9)), drop = F]
     embed <- uwot::umap(x, pca = NULL)
-  	clustering <- cutree(hclust(get_dist(embed, "pearson"), "average"), k=nc)
+  #	clustering <- cutree(hclust(factoextra::get_dist(embed, "pearson"), "average"), k=nc)
 	  embed.counts <- uwot::umap(t(counts[order(apply(counts, 1, sd), decreasing = TRUE)[1:min(1000, nrow(counts))],]), metric = "cosine")
   	
   	df <- data.frame(embed, clustering)

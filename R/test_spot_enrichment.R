@@ -26,14 +26,16 @@ test_spot_enrichment <- function(analysis.data, counts, db_dataset = 'mmusculus_
     }
 
     # get GO database for testing
-    db <- biomaRt::useMart('ENSEMBL_MART_ENSEMBL',dataset=db_dataset, host="www.ensembl.org", verbose = TRUE)
+    suppressWarnings(suppressMessages({
+    db <- biomaRt::useMart('ENSEMBL_MART_ENSEMBL',dataset=db_dataset, host="www.ensembl.org", verbose = FALSE)
     go_ids <- biomaRt::getBM(
         attributes=c('go_id', gene_id, 'namespace_1003'), 
         filters = gene_id, 
         values = colnames(counts), 
         mart = db, 
-        verbose = T
+        verbose = TRUE
     )
+    }))
     
     # do an enrichment test for each spot based on filtered genes that are expressed in this spot
     cl <- makeCluster(ncores)
