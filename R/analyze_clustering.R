@@ -15,12 +15,13 @@
 #' @param build.lasso
 #' @param gamma
 #' @param ncores
+#' @param normalize default FALSE
 #' @return list with 2 entries:\cr
 #' 1) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes. Ordered by gene rank.\cr
 #' 2) gene.cluster.table - data frame containing for each gene in differential.genes the p-value for differential expression in each cluster
 #' @export
 
-analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4){
+analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, normalize = FALSE){
     cat("calculating gene-wise entropy...\t")
     # find cluster-specific genes by calculating total RNA per cluster and gene
     cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
@@ -63,10 +64,15 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.05, lasso.
     cat("testing for differential gene expression...\t")
     # implement testing with multtest for differentially expressed genes for each cluster
     # test each cluster against all other clusters at the same time
+    if(normalize){
+	    deg.counts <- normalize_counts(counts)
+    }else{
+	    deg.counts <- counts
+    }
     test.results <- list()
     for(cl in rownames(cluster.libs)){
         # create temporary count matrix (transposed for multtest) and class labels
-	    temp.counts <- t(counts[c(which(clustering == cl),which(clustering != cl)),])
+	    temp.counts <- t(deg.counts[c(which(clustering == cl),which(clustering != cl)),])
         labs <- c(rep(0,length(which(clustering == cl))), rep(1,length(which(clustering != cl))))
 	    # calculate t-scores, p-values and adjust
         t.scores <- multtest::mt.teststat(temp.counts, labs, test = "t")
