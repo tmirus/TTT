@@ -117,24 +117,24 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
     }
   
     # vector containing background information by clustering
-    background.vec <- rep(0, nrow(counts))
+    background.vec <- rep("background", nrow(counts))
     names(background.vec) <- rownames(counts)
-    background.vec[clusters.to.keep] <- 1
-    background.vec <- as.factor(!as.logical(background.vec))
+    background.vec[clusters.to.keep] <- "tissue"
+    background.vec <- as.factor(background.vec)
     
     # vector containing background information by brightness alone
-    background.temp <- rep(0, nrow(counts))
+    background.temp <- rep("background", nrow(counts))
     names(background.temp) <- rownames(counts)
-    background.temp[spots.to.keep] <- 1
-    background.temp <- as.factor(!as.logical(background.temp))
+    background.temp[spots.to.keep] <- "tissue"
+    background.temp <- as.factor(background.temp)
     
     # create plots
     df <- data.frame(tsne, background.vec, clustering, background.temp)
     colnames(df) <- c("tSNE1", "tSNE2", "background", "clustering", "background.temp")
   
-    p <- ggplot(df, aes(x=tSNE1, y = tSNE2, col = background)) + geom_point()
+    p <- ggplot(df, aes(x=tSNE1, y = tSNE2, col = background)) + geom_point() + labs(col = "class")
     p.bg <- ggplot(df, aes(x = tSNE1, y = tSNE2, col = as.factor(clustering))) + geom_point() + labs(col = "clustering")
-    p.bg.temp <- ggplot(df, aes(x = tSNE1, y = tSNE2, col = background.temp)) + geom_point() + labs(col = "background by brightness")
+    p.bg.temp <- ggplot(df, aes(x = tSNE1, y = tSNE2, col = background.temp)) + geom_point() + labs(col = "class\nby\nbrightness")
   
   
     # reduce ids to the tissue spots
