@@ -11,7 +11,7 @@
 #' 2) umap.plot - ggplot object, UMAP plot of count matrix coloured by clustering
 #' @export
 
-cluster_counts <- function(counts, pca.fraction = 0.8, umap.metric = "cosine", ...) {
+cluster_counts <- function(counts, ids = NULL, pca.fraction = 0.8, umap.metric = "cosine", ...) {
 	suppressMessages(library(igraph, quietly = TRUE))
 	suppressMessages(library(FNN, quietly = TRUE))
 
@@ -29,7 +29,14 @@ cluster_counts <- function(counts, pca.fraction = 0.8, umap.metric = "cosine", .
 	# calculate umap embedding and cluster
   embed <- uwot::umap(x, metric = umap.metric, nn_method = "annoy", pca = NULL, ...)
   
-	k <- 50
+  	if(!is.null(ids)){
+  		embed.knn <- as.matrix(cbind(embed, ids[rownames(counts),]))
+		embed.knn <- apply(embed.knn, 2, function(x){ (x - mean(x)) / sd(x)})
+	}else{
+		embed.knn <- embed
+	}
+  
+	k <- 25
 	knn.norm <- FNN::get.knn(as.matrix(embed), k = 50)
 	knn.norm <- data.frame(
 			       from = rep(1:nrow(knn.norm$nn.index), k),
