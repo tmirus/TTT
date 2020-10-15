@@ -24,12 +24,27 @@
 analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, normalize = FALSE){
     cat("calculating gene-wise entropy...\t")
     # find cluster-specific genes by calculating total RNA per cluster and gene
+
+    if(is.null(lasso.data)){
     cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
     colnames(cluster.libs) <- colnames(counts)
     rownames(cluster.libs) <- unique(clustering)
 
     for(cl in rownames(cluster.libs)){
         cluster.libs[cl,] <- colSums(counts[which(clustering == as.numeric(cl)),,drop=F])
+    }
+    }else{
+    cluster.libs <- matrix(0, ncol=ncol(lasso.data$counts), nrow = length(unique(clustering)))
+    colnames(cluster.libs) <- colnames(lasso.data$counts)
+    rownames(cluster.libs) <- unique(clustering)
+
+
+
+    for(cl in rownames(cluster.libs)){
+	names(clustering) <- rownames(counts)
+        cluster.libs[cl,] <- colSums(lasso.data$counts[which(clustering[rownames(lasso.data$counts)] == as.numeric(cl)),,drop=F])
+    }
+ 
     }
 
     # cannot handle negative expression for entropy
@@ -143,13 +158,13 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
         g <- rownames(gene.table)[i]
         p <- min(gene.table[i,])
   	
-    # assign genes to downregulated clusters only if that p-value is less than half of the
+    # assign genes to downregulated clusters only if that p-value is less than 1 / ncluster of the
     # maximum upregulated value
     regulations <- sapply(clusters, function(cl){sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))})
   	up.max <- max(gene.table[i,which(regulations > 0)])
   	down.max <- max(gene.table[i, which(regulations < 0)])
   	if(length(down.max) > 0 & length(up.max) > 0){
-  		if(2 * down.max < up.max){
+  		if(length(unique(clustering)) * down.max < up.max){
   			cl.which <- which(gene.table[i,] == down.max)
   			cl <- clusters[intersect(which(regulations < 0), cl.which)]
   		}else{
