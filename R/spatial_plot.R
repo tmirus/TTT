@@ -17,7 +17,7 @@
 #' @return ggplot2 object (plot)
 #' @export 
 
-spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0), spot.col = "black", title = "", indicator = NULL){
+spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0), spot.col = "black", title = "", indicator = NULL, spot.size = NULL){
     if(!mode %in% c("discrete", "continuous")){
       stop("Invalid value for parameter 'mode'. Must be one of 'discrete' or 'continuous'.")
     }
@@ -41,7 +41,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
         axis.line = element_blank(), # adding a black line for x and y axis
         axis.text = element_blank(),
         axis.title = element_blank(),
-        #plot.title = element_blank(),
+        plot.title = element_text(size = 30),
         axis.ticks = element_blank()
     )
 
@@ -65,7 +65,11 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     colnames(df) <- c("X", "Y", "cluster")
 
     if(mode == "discrete"){
-        df$cluster <- factor(df$cluster)
+	    if(is.factor(cluster)){
+		    df$cluster <- cluster
+	    }else{
+        	df$cluster <- factor(df$cluster, levels = c(unique(as.character(df$cluster))))
+	    }
         if(indicator == "col"){
           p <- ggplot(
             df, 
@@ -104,5 +108,9 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
       coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
 	i#    })
     if(indicator == "size") p <- p + geom_point(col = spot.col)
+    else if(!is.null(spot.size)){
+	    p <- p + geom_point(na.rm = TRUE, size = 5)
+    }
+
     return(p)
 }
