@@ -41,7 +41,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
         axis.line = element_blank(), # adding a black line for x and y axis
         axis.text = element_blank(),
         axis.title = element_blank(),
-        plot.title = element_text(size = 30),
+        #plot.title = element_text(size = 24),
         axis.ticks = element_blank()
     )
 

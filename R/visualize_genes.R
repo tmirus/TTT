@@ -26,7 +26,7 @@ visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filep
         spatial.cluster <- spatial_plot(rownames(counts), ids, clustering, img, "discrete", plot.params)
 
     #all.genes <- unique(unlist(sapply(gene.info[[2]], function(x){names(x)}), use.names = F))
-    all.genes <- rownames(genelist)[which(rownames(genelist) %in% colnames(counts))]
+    all.genes <- genelist[which(genelist %in% colnames(counts))]
     heatmap.mat <- matrix(0, nrow = length(all.genes), ncol = length(unique(clustering)))
     rownames(heatmap.mat) <- all.genes
     colnames(heatmap.mat) <- unique(clustering)
