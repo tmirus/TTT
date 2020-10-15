@@ -97,7 +97,7 @@ visualize_genes <- function(counts, ids, img = NULL, clustering, genelist, filep
     }
 
     if(!is.null(filepath)){
-        pdf(paste(filepath, "clustering.pdf", sep = "/"), width = 20, height = 20)
+        pdf(paste(filepath, "clustering.pdf", sep = "/"), width = 12, height = 12)
         
         if(exists("spatial.cluster")) plot(spatial.cluster)
         plot(spatial.cluster.legend)
