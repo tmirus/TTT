@@ -36,5 +36,5 @@ filter_spot_enrichments <- function(enrichment.mat, term.names, clustering = NUL
     cat("Number of specific terms: ", sum(clustering.vec > 0), "\n", sep="")
 
     enrichment.mat <- enrichment.mat[order(clustering.vec),]
-    return(list(enrichment.mat = enrichment.mat, term.names = term.names, specific.terms = term.names[which(clustering.vec > 0)]))
+    return(list(enrichment.mat = enrichment.mat, term.names = term.names, specific.terms = term.names[which(clustering.vec > 0)], specific.ids = rownames(enrichment.mat)[which(clustering.vec > 0)]))
 }
