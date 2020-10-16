@@ -176,6 +176,7 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
     counts <- counts[-which(n.genes < 100),]
   }
   
+  # normalization with sctransform
   if(normalize){
     counts.normalized <- normalize_counts(counts)
   }else{

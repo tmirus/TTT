@@ -1,4 +1,5 @@
-#' This function helps choosing offset and spacing parameters for good spatial plots. Basically just a wrapper for spatial_plot that returns the input parameters in a list for easy use later on.
+#' This function helps choosing offset and spacing parameters for good spatial plots. 
+#' Basically just a wrapper for spatial_plot that returns the input parameters in a list for easy use later on.
 #' 
 #' @param ids data frame or matrix assigning spatial coordinates to the spots (should be complete ids data frame, no missing spots)
 #' @param img Image of the ST slide, loaded by EBImage::readImage()

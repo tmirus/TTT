@@ -1,4 +1,5 @@
 #' process the lasso counts and ids for conformity with pipeline output
+#' match spot names in raw ids and lasso ids
 #' 
 #' @description after model building the resulting counts matrix and the 
 #' ids data frame do not contain rownames (spot names / spatial information).

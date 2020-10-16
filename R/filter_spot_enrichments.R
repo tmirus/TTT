@@ -34,6 +34,12 @@ filter_spot_enrichments <- function(enrichment.mat, term.names, clustering = NUL
     }
     cat("Number of enriched terms: ", nrow(enrichment.mat), "\n", sep = "")
     cat("Number of specific terms: ", sum(clustering.vec > 0), "\n", sep="")
+    
+    # rank terms by mean significance of terms in non-zero spots
+    enrichment.sig <- apply(enrichment.mat, 1, function(x){
+        mean(x[x>0])
+    })
+    enrichment.mat <- enrichment.mat[order(enrichment.sig),]
 
     enrichment.mat <- enrichment.mat[order(clustering.vec),]
     return(list(enrichment.mat = enrichment.mat, term.names = term.names, specific.terms = term.names[which(clustering.vec > 0)], specific.ids = rownames(enrichment.mat)[which(clustering.vec > 0)], cluster = clustering.vec))

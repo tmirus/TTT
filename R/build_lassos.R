@@ -1,6 +1,6 @@
 #' Calculate 2D fused-lasso solutionpath for a countmatrix and save as object
 #' This function was adapted with some changes from Martin Fahrenberger's sflST package 
-#' (https://github.com/Martin-Fahrenberger/simpleST)
+#' (https://github.com/Martin-Fahrenberger/sflST)
 #' 
 #' @details This function builds a solution path for each gene (column) in a input matrix, selects the models according to the BIC and 
 #' builds a count matrix

@@ -1,4 +1,7 @@
 #' Returns useful information about a fusedlasso model fit
+#' This function was adapted from Martin Fahrenberger's sflST package 
+#' (https://github.com/Martin-Fahrenberger/sflST)
+#' 
 #' @details This function calculates the RSS, BIC and explained variance of a genlasso model
 #' @param full_model takes an object of the class fusedlasso
 #' @return returns a vector consisting of the df, lambda, rss, BIC and ratio of explained variation dor each lambda.

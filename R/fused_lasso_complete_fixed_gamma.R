@@ -1,4 +1,7 @@
 #' Building sparse fused lasso models for given genes from their count data
+#' This function was adapted with some changes from Martin Fahrenberger's sflST package 
+#' (https://github.com/Martin-Fahrenberger/sflST)
+#' 
 #' @details This function will build a sparse fused lasso for each input gene from it's expression vector and the associated spatial coordinates and save the resulting models to an .Rdata object
 #' @param counts_matrix a matrix with gene expression levels across genes (columns) and associated spots (rows)
 #' @param ids_table table  associating each rowname of the counts_matrix with an x and y coordinate
@@ -15,7 +18,6 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
 
     # store useful information from the genlasso model(s)
     tmp_fits_set <- c()
-    #fits_set <- c()
     BICs_set <- c()
     lls_set <- c()
 

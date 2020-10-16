@@ -1,4 +1,7 @@
 #' Helper function for error handling
+#' This function was adapted from Martin Fahrenberger's sflST package 
+#' (https://github.com/Martin-Fahrenberger/sflST)
+#' 
 #' @details This function catches errors due to truncation of the lasso solution path and returns output for the best available lambda
 #' @param lasso lasso model object you want to evaluate
 #' @param lambda lambda value at which you are trying to evaluate

@@ -10,21 +10,25 @@
 #'@export
 
 plot_spot_enrichments <- function(enrichment.mat, term.names = NULL, ids, plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0), img = NULL, filename = "spot_enrichments.pdf", output.path = "./"){
+    # if no full term names are specified, use
+    # GO IDs for plotting
     if(is.null(term.names)){
         term.names <- rownames(enrichment.mat)
     }
+    # set output path
     if(!dir.exists(output.path)){
         flag <- dir.create(output.path)
         if(!flag){
             stop("Could not find or create output directory")
         }
     }
-
-    enrichment.sig <- apply(enrichment.mat, 1, function(x){mean(x[x>0])})
-    enrichment.mat <- enrichment.mat[order(enrichment.sig),]
     
-    pdf(paste0(output.path, "/", filename), width = 10, height = 10)
+    # replace zeros by NA for plotting
     enrichment.mat[enrichment.mat == 0] <- NA
+    
+    # plot -log10(pvalue) for good scale
+    # ->larger == more significant
+    pdf(paste0(output.path, "/", filename), width = 10, height = 10)
     for(i in 1:nrow(enrichment.mat)){
         plot(
             spatial_plot(

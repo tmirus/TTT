@@ -18,6 +18,7 @@
 #' @export 
 
 spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0), spot.col = "black", title = "", indicator = NULL, spot.size = NULL){
+    # check input
     if(!mode %in% c("discrete", "continuous")){
       stop("Invalid value for parameter 'mode'. Must be one of 'discrete' or 'continuous'.")
     }
@@ -33,6 +34,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
       }
     }
   
+    # set theme for spatial tissue plots 
     theme_transparent <- theme(
         panel.background = element_rect(fill = "transparent"), # bg of the panel
         plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
@@ -45,6 +47,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
         axis.ticks = element_blank()
     )
 
+    # plot adjustment parameters
     nx <- plot.params$nx
     ny <- plot.params$ny
     ox <- plot.params$ox
@@ -52,24 +55,35 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
  
     # standardize image size
     if(!is.null(img)){
-      img <- EBImage::resize(img,w = 1000,h=1000)
+      img <- EBImage::resize(img, w = 1000, h=1000)
     }
 
+    # convert grid coordinates to image coordinates
     df <- c()
-    # convert ids to image coordinates
     for(i in 1:length(barcodes)){
-        temp <- c(ox+(ids[barcodes[i],"X"]-2)*(1000-ox)/nx,oy+(ids[barcodes[i],"Y"]-2)*(1000-oy)/ny, cluster[i])
+        temp <- c(
+          ox+(ids[barcodes[i],"X"]-2)*(1000-ox)/nx,
+          oy+(ids[barcodes[i],"Y"]-2)*(1000-oy)/ny, 
+          cluster[i]
+          )
         df <- rbind(df, temp)
     }
     df <- as.data.frame(df)
     colnames(df) <- c("X", "Y", "cluster")
 
+    # plotting mode
+    # discrete uses input variable as factor, e.g. clustering
+    # or converts it to fact
+    # information coded via color
     if(mode == "discrete"){
+      # factor
 	    if(is.factor(cluster)){
 		    df$cluster <- cluster
 	    }else{
-        	df$cluster <- factor(df$cluster, levels = c(unique(as.character(df$cluster))))
+        	df$cluster <- factor(df$cluster, 
+        	                     levels = c(unique(as.character(df$cluster))))
 	    }
+      # create basic plot variable with color
         if(indicator == "col"){
           p <- ggplot(
             df, 
@@ -80,9 +94,11 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
               )
             )
         }else{
+          # if specified otherwise, create basic plot variable with size
           p <- ggplot(df, aes(x=-as.numeric(as.character(X)), y=as.numeric(as.character(Y)),size=cluster)) +
             theme(legend.position = "none")
         }
+      # continuous mode for numeric values, e.g. gene expression, lib size
     }else{
         df$cluster <- as.numeric(as.character(df$cluster))
         df[which(df$cluster == 0),"cluster"] <- NA
@@ -94,11 +110,12 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
         }
     }
 
+    # set background
     if(!is.null(img)){
         gob <- grid::rasterGrob(img)
         p <- p + annotation_custom(gob,-1000,0,0,1000)
     }
-    #suppressWarnings({
+    
     p <- p + 
       geom_point(na.rm = TRUE) + 
       ggtitle(title) + 
@@ -106,10 +123,11 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
       ylab("") + 
       theme_transparent + 
       coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
-	i#    })
+    # if color does not code information allow manual setting
     if(indicator == "size") p <- p + geom_point(col = spot.col)
     else if(!is.null(spot.size)){
-	    p <- p + geom_point(na.rm = TRUE, size = 5)
+      # maual setting of spot size via parameter
+	    p <- p + geom_point(na.rm = TRUE, size = spot.size)
     }
 
     return(p)

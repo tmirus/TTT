@@ -12,9 +12,11 @@
 #' @export
 
 test_spot_enrichment <- function(analysis.data, counts, db_dataset = 'mmusculus_gene_ensembl', gene_id = "hgnc", ncores = 4){
-    library(httr)
-httr::set_config(config(ssl_verifypeer = FALSE))
+    # avoid ssl certificate error when accessing ensembl
+    suppressMessages(library(httr, quietly = TRUE))
+    httr::set_config(config(ssl_verifypeer = FALSE))
 
+    # required for parallelization
 	suppressMessages(library(parallel, quietly = TRUE))
 	suppressMessages(library(doParallel, quietly = TRUE))
 	suppressMessages(library(foreach, quietly = TRUE))
@@ -22,6 +24,7 @@ httr::set_config(config(ssl_verifypeer = FALSE))
     deg.table <- analysis.data$differential_genes
     gene.table <- analysis.data$gene.cluster.table
 
+    # getBM parameter
     if(gene_id == "hgnc"){
         gene_id <- "external_gene_name"
     }else if(gene_id == "ensembl"){
@@ -40,11 +43,16 @@ httr::set_config(config(ssl_verifypeer = FALSE))
     )
     }))
     
-    # do an enrichment test for each spot based on filtered genes that are expressed in this spot
+    # do an enrichment test for each spot based on filtered genes 
+    # that are expressed in this spot (>5)
     cl <- makeCluster(ncores)
 	registerDoParallel(cl)
     enrichments <- foreach(s = rownames(counts)) %dopar% {
-        temp <- try(enrichment_test(colnames(counts), intersect(rownames(deg.table), colnames(counts)[which(counts[s,] > 5)]), db, go_ids))
+        temp <- try(enrichment_test(
+            colnames(counts), 
+            intersect(rownames(deg.table), 
+                      colnames(counts)[which(counts[s,] > 5)]), 
+            db, go_ids))
         if(class(temp) != "try-error"){
             return(temp)
         }else{
@@ -53,13 +61,16 @@ httr::set_config(config(ssl_verifypeer = FALSE))
     }
     stopCluster(cl)
 
+    # create list of all enriched terms
     enriched.terms <- unique(unlist(sapply(enrichments, function(x){if(!is.null(x)){x$`GO.ID`}})))
     term.names <- sapply(enriched.terms, function(t){GO.db::GOTERM[[t]]@Term})
 
+    # matrix for storing enrichment information of all terms across spots
     enrichment.mat <- matrix(0, nrow = length(enriched.terms), ncol = nrow(counts))
     rownames(enrichment.mat) <- enriched.terms
     colnames(enrichment.mat) <- rownames(counts)
 
+    # fill matrix with test scores (weightFisher)
     for(i in seq_len(nrow(counts))){
         if(is.null(enrichments[[i]])) next
         if(any(rownames(enrichment.mat) %in% enrichments[[i]]$GO.ID)){
