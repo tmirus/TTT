@@ -23,7 +23,7 @@ spatial_gene_plots <- function(gene.table, counts, ids, img = NULL, plot.params 
     }
 
     pdf(filepath, width = 10, height = 10)
-    for(g in rownames(gene.table)[1:min(n.genes, nrow(gene.table))]){
+    for(g in gene.table$gene[1:min(n.genes, nrow(gene.table))]){
         if(!is.null(img) && !is.null(plot.params)){
             p <- spatial_plot(
                 barcodes = rownames(counts), 

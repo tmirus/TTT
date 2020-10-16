@@ -9,45 +9,51 @@
 #' @param sig.level significance level for the t-test between clusters; genes with p-values above this threshold
 #' will be removed from output; default 0.05
 #' @param lasso.data output of build_lassos function
-#' @param deg.weight
-#' @param lls.weight
-#' @param entropy.weight
-#' @param build.lasso
-#' @param gamma
-#' @param ncores
-#' @param normalize default FALSE
+#' @param deg.weight numeric, weight of the ranking of genes by differential gene expression in the
+#' overall ranking; default 2
+#' @param lls.weight numeric, weight of the ranking of genes by lls fit in the
+#' overall ranking; default 3
+#' @param entropy.weightnumeric, weight of the ranking of genes by entropy in the
+#' overall ranking; default 1
+#' @param build.lasso logical, should lasso models be calculated? only used if lasso.data is NULL, default FALSE
+#' @param gamma numeric, gamma value passed to build_lassos. Determines ration of sparsity and smoothness in the model, default 3
+#' @param ncores integer, number of cores used for lasso calculation; default 4
+#' @param normalize logical, should counts be normalized with sctransform prior to differential expression testing? default FALSE
+#' @param verbose logical, default TRUE
 #' @return list with 2 entries:\cr
 #' 1) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes. Ordered by gene rank.\cr
 #' 2) gene.cluster.table - data frame containing for each gene in differential.genes the p-value for differential expression in each cluster
 #' @export
 
-analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, normalize = FALSE){
-    cat("calculating gene-wise entropy...\t")
+analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, normalize = FALSE, verbose = TRUE){
+    # parameter checks  
+  
+    if(verbose) cat("calculating gene-wise entropy...\t")
     # find cluster-specific genes by calculating total RNA per cluster and gene
-
+    # use the lasso model if available
     if(is.null(lasso.data)){
-    cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
-    colnames(cluster.libs) <- colnames(counts)
-    rownames(cluster.libs) <- unique(clustering)
+      cluster.libs <- matrix(0, ncol=ncol(counts), nrow = length(unique(clustering)))
+      colnames(cluster.libs) <- colnames(counts)
+      rownames(cluster.libs) <- unique(clustering)
 
-    for(cl in rownames(cluster.libs)){
-        cluster.libs[cl,] <- colSums(counts[which(clustering == as.numeric(cl)),,drop=F])
-    }
+      for(cl in rownames(cluster.libs)){
+          cluster.libs[cl,] <- colSums(counts[which(clustering == as.numeric(cl)),,drop=F])
+      }
     }else{
-    cluster.libs <- matrix(0, ncol=ncol(lasso.data$counts), nrow = length(unique(clustering)))
-    colnames(cluster.libs) <- colnames(lasso.data$counts)
-    rownames(cluster.libs) <- unique(clustering)
+      cluster.libs <- matrix(0, ncol=ncol(lasso.data$counts), nrow = length(unique(clustering)))
+      colnames(cluster.libs) <- colnames(lasso.data$counts)
+      rownames(cluster.libs) <- unique(clustering)
 
-
-
-    for(cl in rownames(cluster.libs)){
-	names(clustering) <- rownames(counts)
-        cluster.libs[cl,] <- colSums(lasso.data$counts[which(clustering[rownames(lasso.data$counts)] == as.numeric(cl)),,drop=F])
-    }
- 
+      # clustering is by default in the same order as columns in counts
+      # lasso order is probably different
+      for(cl in rownames(cluster.libs)){
+  	      names(clustering) <- rownames(counts)
+          cluster.libs[cl,] <- colSums(lasso.data$counts[which(clustering[rownames(lasso.data$counts)] == as.numeric(cl)),,drop=F])
+      }
     }
 
     # cannot handle negative expression for entropy
+    # shift expressions if necessary
     if(any(cluster.libs < 0)){
 	    cluster.libs <- cluster.libs - min(cluster.libs)
     }
@@ -59,6 +65,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
     # create entropy vector (entropy for each spot)
     specific <- sapply(colnames(cluster.libs), function(x){
         if(! sum(cluster.libs[,x]) > 0) return(NA)
+        # if there are 0 entries for a gene, these need to be excluded
         if(any(cluster.libs[,x] == 0)){
             entropy <- -sum(cluster.libs[-which(cluster.libs[,x] == 0), x] * log2(cluster.libs[-which(cluster.libs[,x] == 0), x]))
         }else{
@@ -66,30 +73,37 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
         }
         return(entropy)
     })
-
-    cat("done\n")
+    if(verbose) cat("done\n")
     names(specific) <- colnames(cluster.libs)
+    
+    # remove NA genes
     if(any(is.na(specific))){
     	specific <- specific[-which(is.na(specific))]
     }
+    
+    # keep only genes with entropy smaller or equal to the median value
     specific <- specific[which(specific <= summary(specific)[3])]
-    cat(length(specific), " genes passed entropy threshold\n", sep = "")
+    if(verbose) cat(length(specific), " genes passed entropy threshold\n", sep = "")
 
 
-    cat("testing for differential gene expression...\t")
-    # implement testing with multtest for differentially expressed genes for each cluster
+    if(verbose) cat("testing for differential gene expression...\t")
+    # implement testing with multtest for differentially expressed genes
     # test each cluster against all other clusters at the same time
+    
+    # normalize counts if required
     if(normalize){
 	    deg.counts <- normalize_counts(counts)
     }else{
 	    deg.counts <- counts
     }
+    
     test.results <- list()
     for(cl in rownames(cluster.libs)){
         # create temporary count matrix (transposed for multtest) and class labels
-	    temp.counts <- t(deg.counts[c(which(clustering == cl),which(clustering != cl)),])
+	      temp.counts <- t(deg.counts[c(which(clustering == cl),which(clustering != cl)),])
         labs <- c(rep(0,length(which(clustering == cl))), rep(1,length(which(clustering != cl))))
-	    # calculate t-scores, p-values and adjust
+        
+	      # calculate t-scores, p-values and adjust
         t.scores <- multtest::mt.teststat(temp.counts, labs, test = "t")
         p.vals <- 2 * pt(abs(t.scores), length(labs) - 2, lower.tail = FALSE)
         p.vals <- p.adjust(p.vals, method = "BH")
@@ -102,42 +116,43 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
         if(any(is.nan(p.vals))){
             p.vals[is.nan(p.vals)] <- 1
         }
+        # sort and store
         p.vals <- sort(p.vals)
         test.results[[cl]] <- p.vals
     }
-    cat("done\n")
+    if(verbose) cat("done\n")
 
     # right now all.genes is actually all genes, but if a significance cutoff
     # were used above, this would be needed
     all.genes <- as.vector(sapply(test.results, function(x){names(x)}))
-    all.genes <- all.genes[!is.na(all.genes)]
+    if(any(is.na(all.genes)))
+      all.genes <- all.genes[!is.na(all.genes)]
     all.genes <- unique(all.genes)
 
-    cat("Assign genes to clusters and remove insignificant genes...\t")
+    if(verbose) cat("Assign genes to clusters and remove insignificant genes...\t")
     # sort the clustering vector to have consistent order
     clusters <- sort(unique(clustering))
     # create a table with genes' p-value per cluster
-    gene.table <- c()
+    gene.table <- matrix(1, ncol = length(clusters), nrow = length(all.genes))
+    rownames(gene.table) <- all.genes
+    colnames(gene.table) <- clusters
+    #gene.table <- c()
     for(g in all.genes){
         cluster.values <- c()
         for(cl in clusters){
-	    # if the gene is present in test results for the cluster add the value
-	    # else add 1
-            if(g %in% names(test.results[[cl]])){
-                cluster.values <- c(cluster.values, as.numeric(test.results[[cl]][g]))
-            }else{
-                cluster.values <- c(cluster.values, 1)
+    	    # if the gene is present in test results for the cluster add the value
+    	    # else add 1
+            p.val <- test.results[[cl]][g]
+            if(!is.na(p.val)){
+                gene.table[g, cl] <- as.numeric(p.val)
             }
         }
-        gene.table <- rbind(gene.table, cluster.values)
     }
-    # create data frame with correct row- and colnames
-    gene.table <- as.data.frame(gene.table)
-    colnames(gene.table) <- clusters
-    rownames(gene.table) <- all.genes
-    for(cl in colnames(gene.table)){
-	    gene.table[[cl]] <- as.numeric(as.character(gene.table[[cl]]))
-    }
+    # coerce to data frame
+#     gene.table <- as.data.frame(gene.table)
+#     for(cl in colnames(gene.table)){
+# 	    gene.table[[cl]] <- as.numeric(as.character(gene.table[[cl]]))
+#     }
 
     # remove genes above significance threshold / with p-value NA in any cluster
     to.remove <- c()
@@ -149,8 +164,9 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
     if(length(to.remove) > 0){
         gene.table <- gene.table[-to.remove,]
     }
+    
     # order table by minimum p-value for each gene
-    gene.table <- gene.table[order(apply(as.matrix(gene.table), 1, min)),]
+    gene.table <- gene.table[order(apply(gene.table, 1, min)),]
    
     # reduced information to minimum p-value, corresponding cluster, gene name and up/downregulation info
     gene.info <- c()
@@ -158,38 +174,73 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
         g <- rownames(gene.table)[i]
         p <- min(gene.table[i,])
   	
-    # assign genes to downregulated clusters only if that p-value is less than 1 / ncluster of the
-    # maximum upregulated value
-    regulations <- sapply(clusters, function(cl){sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))})
-  	up.max <- max(gene.table[i,which(regulations > 0)])
-  	down.max <- max(gene.table[i, which(regulations < 0)])
-  	if(length(down.max) > 0 & length(up.max) > 0){
-  		if(length(unique(clustering)) * down.max < up.max){
-  			cl.which <- which(gene.table[i,] == down.max)
-  			cl <- clusters[intersect(which(regulations < 0), cl.which)]
-  		}else{
-  			cl.which <- which(gene.table[i,] == up.max)
-  			cl <- clusters[intersect(which(regulations > 0), cl.which)]
-  		}
-  	}else{
-          	cl <- clusters[which.min(gene.table[i,])]
-  	}
-  	if(length(cl) > 0){
-  		# up-/downregulation
-          	reg <- sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))
-          	gene.info <- rbind(gene.info,
-                  	           c(g, cl, p, reg))
-  	}
+        # assign genes to downregulated clusters only if that gene's mean expression in the 
+        # remaining clusters is closer to the expression in the upregulated than in the 
+        # downregulated cluster
+        regulations <- sapply(clusters, function(cl){mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g])})
+      	# signs to p-values to indicate up- and down-regulation
+        p.vals <- sign(regulations) * gene.table[i,]
+    	
+        if(any(p.vals < 0)){
+          # determine max up-regulated cluster
+      		p.vals.temp <- p.vals
+      		p.vals.temp[p.vals < 0] <- 1
+      		up.max <- which.min(p.vals.temp)
+      
+      		# determine max down-regulated cluster
+      		p.vals.temp <- p.vals
+      		p.vals.temp[p.vals > 0] <- -1
+      		down.max <- which.max(p.vals.temp)
+    	  }else{
+      		up.max <- which.min(p.vals)
+      		down.max <- NULL
+    	  }
+    
+      	if(is.null(down.max) | length(clusters) <= 2){
+      		cl <- clusters[up.max]
+      	}else{
+      	  # mean gene expression in all clusters that are not up.max or down.max
+        		means <-  sapply(clusters, function(cl){mean(counts[which(clustering == cl),g])})
+        		if(abs(mean(means[-c(down.max, up.max)]) - means[up.max]) < abs(mean(means[-c(down.max, up.max)]) - means[down.max])){
+        			cl <- clusters[down.max]
+        		}else{
+        			cl <- clusters[up.max]
+        		}
+    	  }
+      	
+    	 if(length(cl) > 0){
+      		# up-/downregulation
+        	reg <- sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))
+        	gene.info <- rbind(gene.info,
+                	           c(g, cl, p, reg)
+        	                   )
+      }
     }
+    # coerce to data frame, name columns and adjust cariable types
     gene.info <- as.data.frame(gene.info)
     colnames(gene.info) <- c("gene", "cluster", "pVal", "regulation")
     gene.info$pVal <- as.numeric(as.character(gene.info$pVal))
     gene.info$regulation <- as.numeric(as.character(gene.info$regulation))
     rownames(gene.info) <- as.character(gene.info$gene)
 
-    cat("done\n")
-    cat(nrow(gene.info), " genes passed the significance threshold\n", sep = "")
-    gene.info <- filter_genes(gene.info, specific, lasso.data, deg.weight = deg.weight, lls.weight = lls.weight, entropy.weight = entropy.weight, build.lasso = build.lasso, ncores = ncores, gamma = gamma, counts = counts, ids = ids)
+    if(verbose){
+      cat("done\n")
+      cat(nrow(gene.info), " genes passed the significance threshold\n", sep = "")
+    }
+    gene.info <- filter_genes(
+      gene.info, 
+      specific, 
+      lasso.data, 
+      deg.weight = deg.weight, 
+      lls.weight = lls.weight, 
+      entropy.weight = entropy.weight,
+      build.lasso = build.lasso, 
+      ncores = ncores, 
+      gamma = gamma, 
+      counts = counts, 
+      ids = ids,
+      verbose = verbose
+      )
 
     return(list(
         differential_genes = gene.info,

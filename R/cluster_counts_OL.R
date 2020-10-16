@@ -6,13 +6,15 @@
 #' @param n integer > 1, the number of genes OrderedList takes into account at both ends of the ranked lists
 #' @param alpha numeric 0 < alpha; weight for genes in OrderedList. The larger alpha, less genes toward the middle of the lists are taken into account
 #' @param ncores integer > 0, number of threads to use
+#' @param score.mat optional, matrix containing similarity scores as returned by this function; 
+#' can be used to re-cluster with different number of clusters
 #' @param z.scores logical, should counts be transformed to z-scores for orderedlist? default TRUE
 #' @details For more details on n and alpha see OrderedList package
 #' @return list containing 3 elements:\cr
 #' 1) scores - score matrix containing pairwise OrderedList-scores for all spots\cr
 #' 2) clustering - numeric clustering vector, contains clusters for all spots in the same order as rownames(counts)\cr
-#' 3) tsne.scores - ggplot object, tSNE plot of score matrix coloured by clustering\cr
-#' 4) tsne.counts - ggplot object, tSNE plot of count matrix coloured by clustering
+#' 3) umap.scores - ggplot object, tSNE plot of score matrix coloured by clustering\cr
+#' 4) umap.counts - ggplot object, tSNE plot of count matrix coloured by clustering
 #' @export
 cluster_counts_OL <- function(counts, nc = 6, n = 1000, alpha = 0.25,  ncores = 4, score.mat = NULL, z.scores = TRUE){
 	suppressMessages(library(parallel, quietly = TRUE))

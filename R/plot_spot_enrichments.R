@@ -7,6 +7,7 @@
 #'@param img EBImage image object the information will be plotted on; default NULL
 #'@param filename character, name of the pdf; default "spot_enrichments.pdf"
 #'@param output.path character specifying output directory; default "./"
+#'@export
 
 plot_spot_enrichments <- function(enrichment.mat, term.names = NULL, ids, plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0), img = NULL, filename = "spot_enrichments.pdf", output.path = "./"){
     if(is.null(term.names)){
