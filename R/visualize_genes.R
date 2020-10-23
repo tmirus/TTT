@@ -49,6 +49,8 @@ visualize_genes <- function(counts, ids, img = NULL,
     if(!any(counts < 0)){
       heatmap.counts <- apply(counts, 2, function(x){(x-mean(x)) / sd(x)})
       counts <- heatmap.counts
+    }else{
+	    heatmap.counts <- counts
     }
     
     # create data frame containing average gene expression for each cluster
@@ -132,7 +134,7 @@ visualize_genes <- function(counts, ids, img = NULL,
         pdf(paste(filepath, "clustering.pdf", sep = "/"), width = 12, height = 12)
         
         if(exists("spatial.cluster")) plot(spatial.cluster)
-        plot(spatial.cluster.legend)
+        plot(spatial.cluster.nobg)
         plot(heatmap.plt)
         plot(heatmap.full.plt)
         dev.off()
@@ -141,6 +143,6 @@ visualize_genes <- function(counts, ids, img = NULL,
     # this variable exists only if background image was passed to function
     if(!exists("spatial.cluster")) spatial.cluster <- NULL
     
-    cluster.plots <- list(spatial = spatial.cluster, spatial.no_img = spatial.cluster.legend, heatmap = heatmap.plt, heatmap.full = heatmap.full.plt)
+    cluster.plots <- list(spatial = spatial.cluster, spatial.no_img = spatial.cluster.nobg, heatmap = heatmap.plt, heatmap.full = heatmap.full.plt)
     return(cluster.plots)
 }

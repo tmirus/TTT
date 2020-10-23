@@ -9,7 +9,7 @@
 calc_BICs <- function(full_model){
     summary_lassos <- genlasso::summary.genlasso(full_model)
     N_BIC <- length(full_model$y)
-    SDS_BIC <- sd(full_model$y)**2
+    SDS_BIC <- var(full_model$y)
     ev_ratio <- summary_lassos[,3]/(N_BIC*SDS_BIC)
     BIC <- ev_ratio + log(N_BIC)/N_BIC*summary_lassos[,1]
     

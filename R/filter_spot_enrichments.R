@@ -40,7 +40,8 @@ filter_spot_enrichments <- function(enrichment.mat, term.names, clustering = NUL
         mean(x[x>0])
     })
     enrichment.mat <- enrichment.mat[order(enrichment.sig),]
+    term.names <- term.names[order(enrichment.sig)]
+    clustering.vec <- clustering.vec[order(enrichment.sig)]
 
-    enrichment.mat <- enrichment.mat[order(clustering.vec),]
     return(list(enrichment.mat = enrichment.mat, term.names = term.names, specific.terms = term.names[which(clustering.vec > 0)], specific.ids = rownames(enrichment.mat)[which(clustering.vec > 0)], cluster = clustering.vec))
 }
