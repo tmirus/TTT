@@ -5,16 +5,34 @@
 #' @param db_dataset ensembl dataset to use. default "mmusculus_gene_ensembl" (mouse), for human data use "hsapiens_gene_ensembl"
 #' @param gene_id character denoting the gene symbols to use; default "hgnc" for HGNC symbols; use "ensembl" for ensembl gene ids
 #' @param ncores integer > 0, number of cores to use
+#' @param mirror string indicating ensembl mirror site; must be one of "standard", "uswest", "useast", "asia"; default is "standard"
 #' @return list containing two entries:\cr
 #' 1) enrichments - matrix contining p-values of enrichments test for 
 #' each spot and GO term enriched in at least one spot(terms x spots) \cr
 #' 2) term.names - character vector containing full names of the GO ids in the enrichment matrix
 #' @export
 
-test_spot_enrichment <- function(analysis.data, counts, db_dataset = 'mmusculus_gene_ensembl', gene_id = "hgnc", ncores = 4){
+test_spot_enrichment <- function(analysis.data, counts, db_dataset = 'mmusculus_gene_ensembl', gene_id = "hgnc", ncores = 4, mirror = NULL){
     # avoid ssl certificate error when accessing ensembl
     suppressMessages(library(httr, quietly = TRUE))
     httr::set_config(config(ssl_verifypeer = FALSE))
+
+    if(!is.null(mirror)){
+	    if(!mirror %in% c("useast", "uswest", "asia")){
+		    mirror <- "https://www.ensembl.org"
+		    warning("mirror could not be identified")
+	    }
+    }else{
+    	if(is.null(mirror)){
+	    mirror <- "https://www.ensembl.org"
+    	}else{
+		if(mirror == "standard"){
+			mirror <- "https://www.ensembl.org"
+		}else{
+			mirror <- paste0("https://",mirror,".ensembl.org")
+		}
+	}
+    }
 
     # required for parallelization
 	suppressMessages(library(parallel, quietly = TRUE))
