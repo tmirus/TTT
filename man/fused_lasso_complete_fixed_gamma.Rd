@@ -2,7 +2,9 @@
 % Please edit documentation in R/fused_lasso_complete_fixed_gamma.R
 \name{fused_lasso_complete_fixed_gamma}
 \alias{fused_lasso_complete_fixed_gamma}
-\title{Building sparse fused lasso models for given genes from their count data}
+\title{Building sparse fused lasso models for given genes from their count data
+This function was adapted with some changes from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)}
 \usage{
 fused_lasso_complete_fixed_gamma(
   counts_matrix,
@@ -33,6 +35,8 @@ list containing three elements\cr
 }
 \description{
 Building sparse fused lasso models for given genes from their count data
+This function was adapted with some changes from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)
 }
 \details{
 This function will build a sparse fused lasso for each input gene from it's expression vector and the associated spatial coordinates and save the resulting models to an .Rdata object

@@ -2,21 +2,16 @@
 % Please edit documentation in R/build_lassos.R
 \name{build_lassos}
 \alias{build_lassos}
-\title{Calculate 2D fused-lasso solutionpath for a countmatrix and save as object}
+\title{Calculate 2D fused-lasso solutionpath for a countmatrix and save as object
+This function was adapted with some changes from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)}
 \usage{
-build_lassos(
-  counts_matrix,
-  coords_table,
-  name,
-  output_folder = NULL,
-  ncores = 4,
-  gamma = 1
-)
+build_lassos(counts, ids, name, output_folder = NULL, ncores = 4, gamma = 1)
 }
 \arguments{
-\item{counts_matrix}{input matrix of counts with genes in columns and spot identifier in rows}
+\item{counts}{input matrix of counts with genes in columns and spot identifier in rows}
 
-\item{coords_table}{coordinate table which converts the spot identifier into an x and y coordinate on a grid}
+\item{ids}{coordinate table which converts the spot identifier into an x and y coordinate on a grid}
 
 \item{name}{Name of the experiment}
 
@@ -27,14 +22,17 @@ build_lassos(
 \item{gamma}{ratio of penalization between sparsity and continuity (default 1, high = sparse)}
 }
 \value{
-list containing two elements\cr
+list containing three elements\cr
 \enumerate{
-\item counts - count matrix in the same format as input count matrix
-\item ids - id data frame that assigns spot identifiers to locations on the grid
+\item counts - count matrix in the same format as input count matrix\cr
+\item ids - barcode data frame that assigns spot identifiers to locations on the grid
+\item lls - numeric vector containing least squares fit of model to raw expression for each gene
 }
 }
 \description{
 Calculate 2D fused-lasso solutionpath for a countmatrix and save as object
+This function was adapted with some changes from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)
 }
 \details{
 This function builds a solution path for each gene (column) in a input matrix, selects the models according to the BIC and

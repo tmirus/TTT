@@ -10,9 +10,11 @@ spatial_plot(
   cluster,
   img = NULL,
   mode = "discrete",
-  plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32),
+  plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0),
   spot.col = "black",
-  title = ""
+  title = "",
+  indicator = NULL,
+  spot.size = NULL
 )
 }
 \arguments{
@@ -35,6 +37,9 @@ how this information is used is determined by the parameter mode}
 \item{spot.col}{character specifying the color of the spots if mode is "continuous"}
 
 \item{title}{character, title of the plot"}
+
+\item{indicator}{string, either "col" or "size", depending on wether information should be conveyed by spot size or colour.
+If not specified the default for mode "discrete" will be "col" and the default for mode "continuous" will be "size".}
 }
 \value{
 ggplot2 object (plot)

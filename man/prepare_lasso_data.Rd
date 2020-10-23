@@ -2,7 +2,8 @@
 % Please edit documentation in R/prepare_lasso_data.R
 \name{prepare_lasso_data}
 \alias{prepare_lasso_data}
-\title{process the lasso counts and ids for conformity with pipeline output}
+\title{process the lasso counts and ids for conformity with pipeline output
+match spot names in raw ids and lasso ids}
 \usage{
 prepare_lasso_data(ids_raw, ids_lasso, counts_lasso)
 }

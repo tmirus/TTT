@@ -2,9 +2,10 @@
 % Please edit documentation in R/plot_adjustment.R
 \name{plot_adjustment}
 \alias{plot_adjustment}
-\title{This function helps choosing offset and spacing parameters for good spatial plots. Basically just a wrapper for spatial_plot that returns the input parameters in a list for easy use later on.}
+\title{This function helps choosing offset and spacing parameters for good spatial plots.
+Basically just a wrapper for spatial_plot that returns the input parameters in a list for easy use later on.}
 \usage{
-plot_adjustment(ids, img, nx = 35, ny = 33, ox = 0, oy = 0)
+plot_adjustment(ids, img, nx = 35, ny = 33, ox = 0, oy = 0, output = TRUE)
 }
 \arguments{
 \item{ids}{data frame or matrix assigning spatial coordinates to the spots (should be complete ids data frame, no missing spots)}
@@ -20,10 +21,13 @@ rule of thumb: number of spots shown in the image (vertical); the larger this nu
 \item{ox}{numeric, defines the offset of spot 0,0 from the lower right corner of the image in x-direction (can be negative)}
 
 \item{oy}{numeric, defines the offset of spot 0,0 from the lower tight corner of the image in y-direction (can be negative)}
+
+\item{output}{logical, should an overlay of the adjusted spots be plotted? default TRUE}
 }
 \value{
 list containing the input parameters nx, ny, ox, oy. If the produced plot looks good, this can be used to specify the parameters for plotting in other functions of this package.
 }
 \description{
-This function helps choosing offset and spacing parameters for good spatial plots. Basically just a wrapper for spatial_plot that returns the input parameters in a list for easy use later on.
+This function helps choosing offset and spacing parameters for good spatial plots.
+Basically just a wrapper for spatial_plot that returns the input parameters in a list for easy use later on.
 }

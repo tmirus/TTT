@@ -11,7 +11,7 @@ visualize_genes(
   clustering,
   genelist,
   filepath = NULL,
-  plot.params = list(nx = 35, ny = 33, ox = -1000/70, oy = 1000/32)
+  plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0)
 )
 }
 \arguments{

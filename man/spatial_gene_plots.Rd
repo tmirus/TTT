@@ -10,8 +10,9 @@ spatial_gene_plots(
   ids,
   img = NULL,
   plot.params = NULL,
-  n.genes = 100,
+  n.genes = NULL,
   filepath = NULL,
+  filename = "spatial_genes.pdf",
   colour = "black"
 )
 }
@@ -22,13 +23,15 @@ spatial_gene_plots(
 
 \item{ids}{barcode data frame assigning spatial coordinates to all spots; column names 'X' and 'Y'}
 
-\item{img}{ST image (EBImage object) if available. Will be used as plotting background. If not available, leave default NULL.}
+\item{img}{ST image (EBImage object) if available. Will be used as plotting background if plot.params is provided. If not available, leave default NULL.}
 
 \item{plot.params}{list created by plot_adjustment; only needed if img is provided}
 
-\item{n.genes}{integer, number of genes to be plotted (starting from the top of gene.table)}
+\item{n.genes}{integer, number of genes to be plotted (starting from the top of gene.table); optional}
 
 \item{filepath}{character specifying the directory in which the output file ('spatial_genes.pdf') should be stored}
+
+\item{filename}{character specifying the name of the pdf file; default "spatial_genes.pdf"}
 
 \item{colour}{character specifying the colour of the spots in the gene expression plots; default "black"}
 }

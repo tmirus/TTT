@@ -8,10 +8,14 @@ to the format the package expects}
 process_input(
   counts,
   ids = NULL,
+  img_path = NULL,
   separate_by = "x",
   force_counts = FALSE,
   force_indices = FALSE,
-  dup.sep = NULL
+  dup.sep = "_",
+  n.gene.cutoff = 100,
+  verbose = TRUE,
+  normalize = FALSE
 )
 }
 \arguments{
@@ -24,6 +28,8 @@ corresponding tissue slide and the number of spots along the X-axis is
 higher than the number of spots on the Y-axis.
 optional if spatial information is contained in rownames of counts}
 
+\item{img_path}{character, optional. file path to ST slide image}
+
 \item{separate_by}{only necessary if spatial information is given as
 in the output of ST Pipeline (Navarro et al.), e.g. 32x2; default x}
 
@@ -33,14 +39,23 @@ default FALSE}
 \item{force_indices}{logical, in case the range of x and y indices is not the same as in the
 ST barcode files}
 
-\item{dup.sep}{character, optional; if duplicate gene names are distinguished by e.g. _1, \emph{2
-at the end, pass dup.sep="}" to try to combine these columns}
+\item{dup.sep}{character, optional; if duplicate gene names are distinguished by e.g. \emph{1, \emph{2
+at the end, pass dup.sep="}" to try to combine these columns; default "}"}
+
+\item{n.gene.cutoff}{integer > 0, number of genes that need to be expressed in a spots in order
+for the spot not to be removed from the data}
+
+\item{verbose}{logical, default TRUE}
+
+\item{normalize}{logical, default FALSE}
 }
 \value{
-list with two entries:\cr
+list with three entries:\cr
 \enumerate{
 \item counts - count matrix
 \item ids - barcode data frame assigning spatial positions to spots
+\item img - image (EBImage object), if img_path is supplied
+\item counts.normalized - normalized counts matrix, if normalize is true; NULL else
 }
 }
 \description{

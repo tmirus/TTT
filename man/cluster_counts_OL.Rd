@@ -2,7 +2,7 @@
 % Please edit documentation in R/cluster_counts_OL.R
 \name{cluster_counts_OL}
 \alias{cluster_counts_OL}
-\title{This function uses the OrderedList package to calculate pairwise similarity scores for all spots and cluster on these scores using pam}
+\title{This function uses the OrderedList package to calculate pairwise similarity scores for all spots and cluster on these scores UMAP and hierarchical clustering}
 \usage{
 cluster_counts_OL(
   counts,
@@ -10,7 +10,8 @@ cluster_counts_OL(
   n = 1000,
   alpha = 0.25,
   ncores = 4,
-  score.mat = NULL
+  score.mat = NULL,
+  z.scores = TRUE
 )
 }
 \arguments{
@@ -24,18 +25,23 @@ rows correspond to spots, columns correspond to genes}
 \item{alpha}{numeric 0 < alpha; weight for genes in OrderedList. The larger alpha, less genes toward the middle of the lists are taken into account}
 
 \item{ncores}{integer > 0, number of threads to use}
+
+\item{score.mat}{optional, matrix containing similarity scores as returned by this function;
+can be used to re-cluster with different number of clusters}
+
+\item{z.scores}{logical, should counts be transformed to z-scores for orderedlist? default TRUE}
 }
 \value{
 list containing 3 elements:\cr
 \enumerate{
 \item scores - score matrix containing pairwise OrderedList-scores for all spots\cr
 \item clustering - numeric clustering vector, contains clusters for all spots in the same order as rownames(counts)\cr
-\item tsne.scores - ggplot object, tSNE plot of score matrix coloured by clustering\cr
-\item tsne.counts - ggplot object, tSNE plot of count matrix coloured by clustering
+\item umap.scores - ggplot object, tSNE plot of score matrix coloured by clustering\cr
+\item umap.counts - ggplot object, tSNE plot of count matrix coloured by clustering
 }
 }
 \description{
-This function uses the OrderedList package to calculate pairwise similarity scores for all spots and cluster on these scores using pam
+This function uses the OrderedList package to calculate pairwise similarity scores for all spots and cluster on these scores UMAP and hierarchical clustering
 }
 \details{
 For more details on n and alpha see OrderedList package

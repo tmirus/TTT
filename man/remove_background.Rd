@@ -6,7 +6,7 @@
 Manual checking of the result and adjustment of the threshold is needed.}
 \usage{
 remove_background(
-  img,
+  img = NULL,
   nx = 35,
   ny = 33,
   ids,

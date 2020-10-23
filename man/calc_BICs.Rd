@@ -2,7 +2,9 @@
 % Please edit documentation in R/calc_BICs.R
 \name{calc_BICs}
 \alias{calc_BICs}
-\title{Returns useful information about a fusedlasso model fit}
+\title{Returns useful information about a fusedlasso model fit
+This function was adapted from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)}
 \usage{
 calc_BICs(full_model)
 }
@@ -14,6 +16,8 @@ returns a vector consisting of the df, lambda, rss, BIC and ratio of explained v
 }
 \description{
 Returns useful information about a fusedlasso model fit
+This function was adapted from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)
 }
 \details{
 This function calculates the RSS, BIC and explained variance of a genlasso model

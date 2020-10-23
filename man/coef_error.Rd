@@ -2,7 +2,9 @@
 % Please edit documentation in R/coef_error.R
 \name{coef_error}
 \alias{coef_error}
-\title{Helper function for error handling}
+\title{Helper function for error handling
+This function was adapted from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)}
 \usage{
 coef_error(lasso, lambda)
 }
@@ -16,6 +18,8 @@ returns the nearest possible evaluation to your lambda
 }
 \description{
 Helper function for error handling
+This function was adapted from Martin Fahrenberger's sflST package
+(https://github.com/Martin-Fahrenberger/sflST)
 }
 \details{
 This function catches errors due to truncation of the lasso solution path and returns output for the best available lambda

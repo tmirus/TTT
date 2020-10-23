@@ -4,15 +4,50 @@
 \alias{filter_genes}
 \title{this function returns a table of interesting genes based on lasso model fit, specificity and differential expression}
 \usage{
-filter_genes(analysis.data, lasso.data)
+filter_genes(
+  differential.genes,
+  entropies,
+  lasso.data = NULL,
+  deg.weight = 2,
+  lls.weight = 3,
+  entropy.weight = 1,
+  build.lasso = FALSE,
+  gamma = 3,
+  ncores = 4,
+  counts = NULL,
+  ids = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{analysis.data}{output of analyze_clustering function}
+\item{differential.genes}{data frame containing information about differential expression of genes}
 
-\item{lasso.data}{output of build_lassos function}
+\item{entropies}{named numeric vector of entropies for all genes}
+
+\item{lasso.data}{output of build_lassos function; default NULL}
+
+\item{deg.weight}{weight of p-value in overall gene ranking; default 2}
+
+\item{lls.weight}{weight of lasso fit in overall gene ranking; default 3}
+
+\item{entropy.weight}{weight of entropy in overall gene ranking; default 1}
+
+\item{build.lasso}{logical, if lasso.data is NULL, should lasso models be calculated? default FALSE}
+
+\item{gamma}{numeric > 0, if build.lasso is TRUE, the gamma value passed to build_lassos; default 3}
+
+\item{ncores}{numeric > 0, the number of cores available for calculation; only used for lasso building, default 4}
+
+\item{counts}{non-negative numeric matrix containing gene counts,
+rows correspond to spots, columns correspond to genes}
+
+\item{ids}{data frame or matrix assigning spatial coordinates to the spots (see process_input() for details)}
+
+\item{verbose}{logical, default TRUE}
 }
 \value{
-data frame containing gene name, cluster with lowest p-value, lowest p-value and up/downregulation information for each gene
+data frame containing gene name, cluster with lowest p-value, lowest p-value,
+up/downregulation information, lls fit (if lasso data was supplied) and entropy for each gene
 }
 \description{
 this function returns a table of interesting genes based on lasso model fit, specificity and differential expression

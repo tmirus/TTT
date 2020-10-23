@@ -6,7 +6,21 @@
 It calculates a list of genes specific to a certain cluster and identifies differentually expressed genes
 across clusters}
 \usage{
-analyze_clustering(counts, ids, clustering, sig.level = 0.05)
+analyze_clustering(
+  counts,
+  ids,
+  clustering,
+  sig.level = 0.001,
+  lasso.data = NULL,
+  deg.weight = 2,
+  lls.weight = 3,
+  entropy.weight = 1,
+  build.lasso = FALSE,
+  gamma = 3,
+  ncores = 4,
+  normalize = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{counts}{non-negative numeric matrix containing gene counts,
@@ -18,13 +32,33 @@ rows correspond to spots, columns correspond to genes}
 
 \item{sig.level}{significance level for the t-test between clusters; genes with p-values above this threshold
 will be removed from output; default 0.05}
+
+\item{lasso.data}{output of build_lassos function}
+
+\item{deg.weight}{numeric, weight of the ranking of genes by differential gene expression in the
+overall ranking; default 2}
+
+\item{lls.weight}{numeric, weight of the ranking of genes by lls fit in the
+overall ranking; default 3}
+
+\item{build.lasso}{logical, should lasso models be calculated? only used if lasso.data is NULL, default FALSE}
+
+\item{gamma}{numeric, gamma value passed to build_lassos. Determines ration of sparsity and smoothness in the model, default 3}
+
+\item{ncores}{integer, number of cores used for lasso calculation; default 4}
+
+\item{normalize}{logical, should counts be normalized with sctransform prior to differential expression testing? default FALSE}
+
+\item{verbose}{logical, default TRUE}
+
+\item{entropy.weightnumeric, }{weight of the ranking of genes by entropy in the
+overall ranking; default 1}
 }
 \value{
-list with 3 entries:\cr
+list with 2 entries:\cr
 \enumerate{
-\item specific - character vecor containing names of genes that are specific to any cluster\cr
-\item differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes\cr
-\item dsg - differential genes reduced to genes that are also contained in 'specific'
+\item differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes. Ordered by gene rank.\cr
+\item gene.cluster.table - data frame containing for each gene in differential.genes the p-value for differential expression in each cluster
 }
 }
 \description{
