@@ -3,7 +3,6 @@
 export(analyze_clustering)
 export(build_lassos)
 export(cluster_counts)
-export(cluster_counts_OL)
 export(filter_genes)
 export(filter_spot_enrichments)
 export(normalize_counts)

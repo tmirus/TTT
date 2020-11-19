@@ -60,7 +60,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
     # reduce to genes that are not 0 overall
     cluster.libs <- cluster.libs[, which(colSums(cluster.libs) > 0)]
     # scale to 1
-    cluster.libs <- apply(cluster.libs, 2, function(x){x / sum(x)}) 
+    cluster.libs <- sweep(cluster.libs, 2, colSums(cluster.libs), "/")
 
     # create entropy vector (entropy for each spot)
     specific <- sapply(colnames(cluster.libs), function(x){
