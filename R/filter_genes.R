@@ -12,12 +12,13 @@
 #' @param counts non-negative numeric matrix containing gene counts, 
 #' rows correspond to spots, columns correspond to genes
 #' @param ids data frame or matrix assigning spatial coordinates to the spots (see process_input() for details)
+#' @param reduce logical, default TRUE. Return only genes passing certain thresholds in each ranking metric? Large runtime improvement in case build.lasso is TRUE.
 #' @param verbose logical, default TRUE
 #' @return data frame containing gene name, cluster with lowest p-value, lowest p-value, 
 #' up/downregulation information, lls fit (if lasso data was supplied) and entropy for each gene
 #' @export
 
-filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, counts = NULL, ids = NULL, verbose = TRUE){
+filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, counts = NULL, ids = NULL, reduce = TRUE, verbose = TRUE){
     specific.genes <- names(entropies)
 
     # only differentially expressed genes with low entropy are considered
@@ -67,19 +68,25 @@ filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.w
 
     if(!is.null(lasso.data)){
         # keep only genes with fitting models
-	      if(verbose) cat("Filtering for lls fit...\n")
-        differential.genes <- differential.genes[names(lls)[which(lls < summary(lls)[4])],]
-	      if(verbose) cat(nrow(differential.genes), " genes passed lls threshold\n", sep = "")
+        if(reduce){
+  	      if(verbose) cat("Filtering for lls fit...\n")
+          differential.genes <- differential.genes[names(lls)[which(lls < summary(lls)[4])],]
+  	      if(verbose) cat(nrow(differential.genes), " genes passed lls threshold\n", sep = "")
+        }
     }
     
     ranks <- ranks[which(names(ranks) %in% rownames(differential.genes))]
     differential.genes <- differential.genes[names(ranks),]
     
     if(!is.null(lasso.data)){
-        differential.genes <- cbind(differential.genes, lls = lls[names(ranks)], entropy = entropies[names(ranks)])
+        differential.genes <- cbind(rank = 1:nrow(differential.genes), differential.genes, lls = lls[names(ranks)], entropy = entropies[names(ranks)])
     }else{
-        differential.genes <- cbind(differential.genes, entropy = entropies[names(ranks)])
+        differential.genes <- cbind(rank = 1:nrow(differential.genes), differential.genes, entropy = entropies[names(ranks)])
     }
 
-    return(differential.genes)
+    if(build.lasso){
+      return(list(diff.genes = differential.genes, lasso = lasso.data))
+    }else{
+      return(list(diff.genes = differential.genes, lasso = NULL))
+    }
 }

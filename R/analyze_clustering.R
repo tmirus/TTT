@@ -18,6 +18,7 @@
 #' @param build.lasso logical, should lasso models be calculated? only used if lasso.data is NULL, default FALSE
 #' @param gamma numeric, gamma value passed to build_lassos. Determines ration of sparsity and smoothness in the model, default 3
 #' @param ncores integer, number of cores used for lasso calculation; default 4
+#' @param reduce logical, default TRUE. Return only genes passing certain thresholds in each ranking metric? Large runtime improvement in case build.lasso is TRUE.
 #' @param normalize logical, should counts be normalized with sctransform prior to differential expression testing? default FALSE
 #' @param verbose logical, default TRUE
 #' @return list with 2 entries:\cr
@@ -25,7 +26,7 @@
 #' 2) gene.cluster.table - data frame containing for each gene in differential.genes the p-value for differential expression in each cluster
 #' @export
 
-analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, normalize = FALSE, verbose = TRUE){
+analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, reduce = TRUE, normalize = FALSE, verbose = TRUE){
     # parameter checks  
   
     if(verbose) cat("calculating gene-wise entropy...\t")
@@ -81,9 +82,13 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
     	specific <- specific[-which(is.na(specific))]
     }
     
-    # keep only genes with entropy smaller or equal to the median value
-    specific <- specific[which(specific <= summary(specific)[3])]
-    if(verbose) cat(length(specific), " genes passed entropy threshold\n", sep = "")
+    if(reduce){
+      # keep only genes with entropy smaller or equal to the mean value
+      specific <- specific[which(specific <= summary(specific)[4])]
+      if(verbose) cat(length(specific), " genes passed entropy threshold\n", sep = "")
+    }else{
+      if(verbose) cat(length(which(specific <= summary(specific)[3])), " genes below mean entropy\n", sep = "")
+    }
 
 
     if(verbose) cat("testing for differential gene expression...\t")
@@ -129,7 +134,10 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
       all.genes <- all.genes[!is.na(all.genes)]
     all.genes <- unique(all.genes)
 
-    if(verbose) cat("Assign genes to clusters and remove insignificant genes...\t")
+    if(verbose) {
+      if(reduce) cat("Assign genes to clusters and remove insignificant genes")
+      else cat("Assign genes to clusters")
+    }
     # sort the clustering vector to have consistent order
     clusters <- sort(unique(clustering))
     # create a table with genes' p-value per cluster
@@ -148,18 +156,17 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
             }
         }
     }
-    # coerce to data frame
-#     gene.table <- as.data.frame(gene.table)
-#     for(cl in colnames(gene.table)){
-# 	    gene.table[[cl]] <- as.numeric(as.character(gene.table[[cl]]))
-#     }
 
     # remove genes above significance threshold / with p-value NA in any cluster
     to.remove <- c()
     for(i in 1:nrow(gene.table)){
-        if(min(gene.table[i,]) > sig.level | is.na(min(gene.table[i,]))){
-            to.remove <- c(to.remove, i)
+        if(is.na(min(gene.table[i,]))){
+            gene.table[i, which(is.na(gene.table[i,]))] <- 1
         }
+      if(reduce && min(gene.table[i,]) > sig.level){
+          to.remove <- c(to.remove, i)
+        }
+        
     }
     if(length(to.remove) > 0){
         gene.table <- gene.table[-to.remove,]
@@ -216,7 +223,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
         	                   )
       }
     }
-    # coerce to data frame, name columns and adjust cariable types
+    # coerce to data frame, name columns and adjust variable types
     gene.info <- as.data.frame(gene.info)
     colnames(gene.info) <- c("gene", "cluster", "pVal", "regulation")
     gene.info$pVal <- as.numeric(as.character(gene.info$pVal))
@@ -225,7 +232,8 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
 
     if(verbose){
       cat("done\n")
-      cat(nrow(gene.info), " genes passed the significance threshold\n", sep = "")
+      if(reduce) cat(nrow(gene.info), " genes passed the significance threshold\n", sep = "")
+      else cat(sum(gene.info$pVal < sig.level), " genes below significance threshold\n", sep = "")
     }
     gene.info <- filter_genes(
       gene.info, 
@@ -239,11 +247,13 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
       gamma = gamma, 
       counts = counts, 
       ids = ids,
+      reduce = reduce,
       verbose = verbose
       )
 
     return(list(
-        differential_genes = gene.info,
-        gene.cluster.table = gene.table[rownames(gene.info),]
+        differential_genes = gene.info$diff.genes,
+        gene.cluster.table = gene.table[rownames(gene.info$diff.genes),],
+        lasso.data = gene.info$lasso
 	))
 }
