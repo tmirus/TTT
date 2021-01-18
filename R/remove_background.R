@@ -9,6 +9,7 @@
 #' rows correspond to spots, columns correspond to genes
 #' @param threshold relative brightness. spots above this threshold are discarded
 #' @param plot.params list as returned by plot_adjustment(). optional but recommended for optimal results.
+#' @param force.manual logical, forces the function to use manual threshold instead of attempting to find best threshold with Expectation Minimization
 #' @details nx and ny depend on the cropping of the image. the area of measurements in an ST experiment is
 #' @return list containing four entries\cr
 #' 1) spots.to.keep - vector of barcodes / spot names of the spots that should not be removed
@@ -19,10 +20,11 @@
 #' default values of nx=35 and ny=33 are sensible. If not, it should be nx=33 and ny=31.\cr
 #' The image is assumed to be oriented such that the rectangular 4x4 array of spots in one of the corners
 #' is in the lower right corner and on the x-axis (left to right) there are more spots than on the y-axis.\cr
-#' 4) clustering.tsne tSNE embedding of spots coloured by classification (background/tissue)
+#' 4) clustering.tsne tSNE embedding of spots coloured by classification (background/tissue)\cr
+#' 5) brightness.plot density plot of brightness values, fits for two groups and decision boundary for dividing tissue and background
 #' @export
 
-remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold = 0.7, plot.params = NULL){
+remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold = 0.7, plot.params = NULL, force.manual = FALSE){
   if(!is.null(img)){
     # reduce to one pixel per spot
     img <- EBImage::channel(img, "gray")
@@ -60,9 +62,68 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
         EBImage::imageData(img.reduced)[x,y] <- mean(EBImage::imageData(img.reduced)[x.neighbours, y.neighbours])
       }
     }
+    
+    EBImage::imageData(img.reduced) <- EBImage::imageData(img.reduced) / max(EBImage::imageData(img.reduced))
   
     # select the spots to remove
-    EBImage::imageData(img.reduced)[EBImage::imageData(img.reduced) > threshold*max(EBImage::imageData(img.reduced))] <- 1
+    brightness.values <- as.vector(EBImage::imageData(img.reduced))
+    if(!force.manual){
+    em.result <- mclust::Mclust(data = brightness.values, G = 2, modelNames = "V")
+    
+    # get solution for best split
+    means <- em.result$parameters$mean
+    sds <- em.result$parameters$variance$sigmasq
+    pros <- em.result$parameters$pro
+    
+    f <- function(x){
+      return(pros[1] * dnorm(x, means[1], sqrt(sds[1])) - pros[2] * dnorm(x, means[2], sqrt(sds[2])))
+    }
+
+    is.between <- function(x1, x2, y){
+      if((y > x1 && y < x2) || (y > x2 && y < x1)){
+        return(TRUE)
+      }else{
+        return(FALSE)
+      }
+    }
+    
+    x0 <- cmna::bisection(f, means[1], means[2],tol = 1e-5, m = 10000)
+    if(!is.between(means[1], means[2], x0) || abs(f(x0) > 0.01)){
+      x0 <- threshold
+    }else{
+      cat("Brightness Threshold determined by EM: ", x0, "\n")
+    }
+    
+    dist1 <- pros[1] * dnorm(x = seq(0,1,by = 0.01), mean = means[1], sd = sqrt(sds[1]))
+    dist2 <- pros[2] * dnorm(x = seq(0,1,by = 0.01), mean = means[2], sd = sqrt(sds[2]))
+    brightness.df <- data.frame(
+      brightness = rep(seq(0,1,by = 0.01), 3), 
+      density = c(dist1, dist2, density(brightness.values, n = 101, from = 0, to = 1)$y),
+      curve = c(rep("group1", 101), rep("group2", 101), rep("real", 101))
+    )
+    
+    brightness.plot <- ggplot(brightness.df, 
+                              aes(
+                                x = brightness, 
+                                y = density, 
+                                group = curve, 
+                                col = curve)
+                              ) + 
+      geom_line() +
+      geom_vline(xintercept = x0, col = "black") +
+      ggtitle("Brightness distribution, fits and threshold")
+    }else{
+	x0 <- threshold
+	brightness.density <- density(brightness.values, n = 101, from = 0, to = 1)
+    	brightness.plot <- ggplot(aes(x = brightness.density$x, y = brightness.density$y)) +
+		geom_line() +
+		ggtitle("Brightness distribution and threshold") +
+		xlab("Brightness") +
+		ylab("Density") +
+		geom_vline(xintercept = x0, col = "black")
+    }
+    
+    EBImage::imageData(img.reduced)[EBImage::imageData(img.reduced) > x0] <- 1
     to.remove <- t(matrix(EBImage::imageData(img.reduced) == 1, nrow=nx))
     
     # store in more compatible format
@@ -184,6 +245,7 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
     image = img,
     clustering.tsne = p,
     fine.clustering.tsne = p.bg,
-    temp.clustering.tsne = p.bg.temp
+    temp.clustering.tsne = p.bg.temp,
+    brightness.plot = brightness.plot
 ))
 }
