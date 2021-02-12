@@ -158,16 +158,19 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
     }))
     colnames(counts) <- gene.names
   }
-  if(verbose) cat("Duplicates found:", sum(duplicated(colnames(counts))), "\nRemoving...\n")
+  
   
   # find all duplicate names, iterate over them, sum them up and remove superfluous columns
   if(sum(duplicated(colnames(counts))) > 0){
     dup.genes <- unique(colnames(counts)[duplicated(colnames(counts))])
+    if(verbose) cat("Duplicates found for ", length(dup.genes), " genes.\nRemoving...\n")
+    removal.indices <- c()
     for(g in dup.genes){
       gene.idx <- which(colnames(counts) == g)
       counts[,gene.idx[1]] <- rowSums(counts[, gene.idx])
-      counts <- counts[,-gene.idx[-1]]
+      removal.indices <- c(removal.indices, gene.idx[-1])
     }
+    counts <- counts[,-removal.indices]
   }
   
   # remove spots with exceptionally low number of expressed genes
