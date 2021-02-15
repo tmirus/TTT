@@ -50,6 +50,7 @@ build_lassos <- function(counts,ids,name,output_folder = NULL,ncores=4,gamma=1){
                            mc.cores = ncores
                            )
     
+    rnames <- rownames(counts)
     # reconstruct the counts matrix and store additional information 
     # returned by fused_lasso_complete_fixed_gamma
     counts <- c()
@@ -62,6 +63,7 @@ build_lassos <- function(counts,ids,name,output_folder = NULL,ncores=4,gamma=1){
             lls <- append(lls, lasso.data[[i]]$lls)
         }
     }
+    rownames(counts) <- rnames
     
     # save the results in case post-processing of lasso results fails
     if (!is.null(output_folder) && is.character(output_folder)) {
