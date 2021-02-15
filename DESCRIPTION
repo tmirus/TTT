@@ -15,5 +15,5 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 biocViews:
-Imports: mclust, cmna, genlasso, biomaRt, Rtsne, OrderedList, multtest, cluster, grid, gridExtra, RColorBrewer, parallel, doParallel, topGO, foreach, uwot, igraph, FNN, GO.db, sctransform, factoextra
-Depends: EBImage, ggplot2
+Imports: cmna, genlasso, biomaRt, Rtsne, OrderedList, multtest, cluster, grid, gridExtra, RColorBrewer, parallel, doParallel, topGO, foreach, uwot, igraph, FNN, GO.db, sctransform, factoextra
+Depends: EBImage, ggplot2, mclust

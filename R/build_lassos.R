@@ -71,17 +71,18 @@ build_lassos <- function(counts,ids,name,output_folder = NULL,ncores=4,gamma=1){
 
     # keep the original ids and rownames
     # create a lasso ids data frame based on mapping of index to x and y
-    ids_lasso <- c()
-    for(i in 0:(max(ids[,2])-1)){
-        for(j in 1:max(ids[,1])){
-            # spot one corresponds to (1,1)
-            ids_lasso <- rbind(ids_lasso, c(j, i + 1))
-        }
-    }
-    rownames(ids_lasso) <- 1:nrow(ids_lasso)
-    # match the temporary data frame to original ids
-    lasso.data <- prepare_lasso_data(ids, ids_lasso, as.matrix(counts))
-    lasso.data[["lls"]] <- lls
+    # ids_lasso <- c()
+    # for(i in 0:(max(ids[,2])-1)){
+    #     for(j in 1:max(ids[,1])){
+    #         # spot one corresponds to (1,1)
+    #         ids_lasso <- rbind(ids_lasso, c(j, i + 1))
+    #     }
+    # }
+    # rownames(ids_lasso) <- 1:nrow(ids_lasso)
+    # # match the temporary data frame to original ids
+    # lasso.data <- prepare_lasso_data(ids, ids_lasso, as.matrix(counts))
+    lasso.data <- list(counts = as.matrix(counts), ids = ids, lls = lls)
+    #lasso.data[["lls"]] <- lls
     
     # remove the original count matrix
     rm(counts)

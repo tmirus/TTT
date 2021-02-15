@@ -15,7 +15,6 @@
 
 fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, output_folder, gamma=1){
     gene_list <- colnames(counts_matrix)
-
     # store useful information from the genlasso model(s)
     tmp_fits_set <- c()
     BICs_set <- c()
@@ -29,13 +28,12 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       i <- gene_list[k]
       # create a 2D matrix (x and y information) for each gene for use with genlasso
       # y in rows, x in columns (by our definition)
-      tmp_matrix <- matrix(data = 0,nrow = max(ids_table[,1]),ncol = max(ids_table[,2]))
-      for (j in 1:nrow(counts_matrix)){
-          tmp_matrix[ids_table[rownames(counts_matrix)[j],1],ids_table[rownames(counts_matrix)[j],2]] <- counts_matrix[j,i]
-      }
+      
+      # create adjacency matrix
+      adj.mat <- create_graph(rownames(counts_matrix), ids_table)
 
       # full solution path calculation
-      tmp_lasso <- genlasso::fusedlasso2d(tmp_matrix,gamma = gamma,approx=F)
+      tmp_lasso <- genlasso::fusedlasso(y = counts_matrix[,i], graph = adj.mat, gamma = gamma, approx=FALSE)
       
       # calculate BICs for all possible models
       BIC_list <- calc_BICs(tmp_lasso)
