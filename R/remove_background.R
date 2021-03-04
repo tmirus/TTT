@@ -114,8 +114,8 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
       ggtitle("Brightness distribution, fits and threshold")
     }else{
 	x0 <- threshold
-	brightness.density <- density(brightness.values, n = 101, from = 0, to = 1)
-    	brightness.plot <- ggplot(aes(x = brightness.density$x, y = brightness.density$y)) +
+	brightness.density <- as.data.frame(density(brightness.values, n = 101, from = 0, to = 1)[1:2])
+    	brightness.plot <- ggplot(brightness.density, aes(x = x, y = y)) +
 		geom_line() +
 		ggtitle("Brightness distribution and threshold") +
 		xlab("Brightness") +
