@@ -26,11 +26,11 @@ slide_orientation <- function(ids, flip.x = FALSE, flip.y = FALSE, rotate = 0){
     ids$Y <- (max(ids$Y) + 1) - ids$Y
   }
   # rotate
-  if(rotate %% 90){
+  if(!rotate %% 90){
     for(i in 1:(rotate/90)){
       temp <- ids$Y
       ids$Y <- ids$X
-      ids$X <- -temp
+      ids$X <- (max(temp)+1) - temp
     }
   }else{
     warning("rotate must be a divisible by 90")

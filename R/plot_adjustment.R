@@ -16,12 +16,12 @@ plot_adjustment <- function(ids, img, nx = 35, ny = 33, ox = 0, oy = 0, output =
 	if(output){
     plot(
 	 spatial_plot(
-		rownames(ids), 
-		ids, 
-		rep(1, nrow(ids)), 
-		img, 
-		"discrete", 
-		list(nx = nx, ny = ny, ox = ox, oy = oy)
+		barcodes = rownames(ids), 
+		ids = ids, 
+		cluster = rep(1, nrow(ids)), 
+		img = img, 
+		mode = "discrete", 
+		plot.params = list(nx = nx, ny = ny, ox = ox, oy = oy)
 		) + theme(legend.position = "none")
     )
 	}
