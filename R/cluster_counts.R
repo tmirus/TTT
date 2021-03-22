@@ -32,7 +32,7 @@ cluster_counts <- function(counts, ids = NULL, pca.fraction = 0.8, umap.metric =
 
 	# calculate umap embedding and cluster
   embed <- uwot::umap(x, metric = umap.metric, nn_method = "annoy", pca = NULL, ...)
-  
+
   if(!is.null(ids)){
   	embed.knn <- as.matrix(cbind(embed, ids[rownames(counts),]))
 		embed.knn <- apply(embed.knn, 2, function(x){ (x - mean(x)) / sd(x)})
@@ -53,9 +53,12 @@ cluster_counts <- function(counts, ids = NULL, pca.fraction = 0.8, umap.metric =
 	clustering <- as.numeric(membership(lc.norm))
 
 	# create umap plot
+	
   df <- data.frame(embed, clustering)
+  
   colnames(df) <- c("UMAP1", "UMAP2", "cluster")
   df$cluster <- as.factor(df$cluster)
+  
   umap.plot <- ggplot(df, aes(x = UMAP1, y = UMAP2, col = cluster)) +
       geom_point()
   if(!is.null(ids)){
@@ -63,7 +66,7 @@ cluster_counts <- function(counts, ids = NULL, pca.fraction = 0.8, umap.metric =
       barcodes = rownames(counts),
       ids = ids,
       cluster = df$cluster,
-      mode = "continuous"
+      mode = "discrete"
     )
   }else{
     spatial.plot <- NULL
