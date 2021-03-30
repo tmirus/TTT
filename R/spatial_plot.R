@@ -17,7 +17,7 @@
 #' @return ggplot2 object (plot)
 #' @export 
 
-spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot.params = list(nx = 35, ny = 33, ox = 0, oy = 0), spot.col = "black", title = "", indicator = NULL, spot.size = NULL){
+spatial_plot <- function(barcodes, ids, cluster, img = NULL, img_size = NULL, mode="discrete", plot.params = NULL, spot.col = "black", title = "", indicator = NULL, spot.size = NULL){
     # check input
     if(!mode %in% c("discrete", "continuous")){
       stop("Invalid value for parameter 'mode'. Must be one of 'discrete' or 'continuous'.")
@@ -48,27 +48,60 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     )
 
     # plot adjustment parameters
+    if(!is.null(plot.params)){	  
     nx <- plot.params$nx
     ny <- plot.params$ny
     ox <- plot.params$ox
     oy <- plot.params$oy
+    }else{
+	nx <- 33
+    	ny <- 31
+	ox <- 0
+	oy <- 0
+    }
  
+
     # standardize image size
     if(!is.null(img)){
-      img <- EBImage::resize(img, w = 1000, h=1000)
+      
+	
+      if(is.null(img_size)){
+      	dim_x <- dim(img)[1]
+      dim_y <- dim(img)[2]
+	      img_size <- min(dim_x, dim_y) 
+      }else{
+	      dim_x <- img_size
+	      dim_y <- img_size
+      }
+      
+      img <- EBImage::resize(img, w = img_size, h = img_size)  
+    }else{
+	    if(is.null(img_size) || is.null(plot.params)){
+	    dim_x <- 1000
+	    dim_y <- 1000
+	    
+	    # ignore plot params because they might be wrong for image width
+	    nx <- max(ids$X)
+	    ny <- max(ids$Y)
+	    ox <- 0
+	    oy <- 0
+	    }
     }
+    plot.params <- list(nx = nx, ny = ny, ox = ox, oy = oy)
 
     # convert grid coordinates to image coordinates
     df <- c()
     for(i in 1:length(barcodes)){
         temp <- c(
-          ox+(ids[barcodes[i],"X"]-2)*(1000-ox)/nx,
-          oy+(ids[barcodes[i],"Y"]-2)*(1000-oy)/ny, 
+          ox+(ids[barcodes[i],"X"]-2)*(dim_x)/nx,
+          oy+(ids[barcodes[i],"Y"]-2)*(dim_y)/ny, 
           cluster[i]
           )
+    	
         df <- rbind(df, temp)
     }
     df <- as.data.frame(df)
+    
     colnames(df) <- c("X", "Y", "cluster")
 
     # plotting mode
@@ -113,7 +146,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
     # set background
     if(!is.null(img)){
         gob <- grid::rasterGrob(img)
-        p <- p + annotation_custom(gob,-1000,0,0,1000)
+        p <- p + annotation_custom(gob,-dim_x,0,0,dim_y)
     }
     
     p <- p + 
@@ -122,7 +155,7 @@ spatial_plot <- function(barcodes, ids, cluster, img=NULL, mode="discrete", plot
       xlab("") + 
       ylab("") + 
       theme_transparent + 
-      coord_fixed(ratio = 1, xlim =c(-1000,0), ylim=c(0,1000))
+      coord_fixed(ratio = 1, xlim =c(-dim_x,0), ylim=c(0,dim_y))
     # if color does not code information allow manual setting
     if(indicator == "size") p <- p + geom_point(col = spot.col)
     else if(!is.null(spot.size)){

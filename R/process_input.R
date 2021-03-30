@@ -9,6 +9,7 @@
 #' higher than the number of spots on the Y-axis.
 #' optional if spatial information is contained in rownames of counts
 #' @param img_path character, optional. file path to ST slide image
+#' @param img_size, numeric value giving with and height the image will be scaled to
 #' @param separate_by only necessary if spatial information is given as
 #' in the output of ST Pipeline (Navarro et al.), e.g. 32x2; default x
 #' @param force_counts logical, in case there are less genes than spots this needs to be TRUE; 
@@ -20,7 +21,6 @@
 #' @param n.gene.cutoff integer > 0, number of genes that need to be expressed in a spots in order 
 #' for the spot not to be removed from the data
 #' @param verbose logical, default TRUE
-#' @param normalize logical, default FALSE
 #' @return list with three entries:\cr
 #' 1) counts - count matrix
 #' 2) ids - barcode data frame assigning spatial positions to spots
@@ -28,7 +28,7 @@
 #' 4) counts.normalized - normalized counts matrix, if normalize is true; NULL else
 #' @export
 
-process_input <- function(counts, ids = NULL, img_path = NULL, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = "_", n.gene.cutoff = 100, verbose = TRUE, normalize = FALSE){
+process_input <- function(counts, ids = NULL, img_path = NULL, img_size = 1000, separate_by = "x", force_counts = FALSE, force_indices = FALSE, dup.sep = "_", n.gene.cutoff = 100, verbose = TRUE){
   if(is.character(counts)){
     if(file.exists(counts)){
       counts <- as.matrix(read.table(counts, check.names = FALSE))
@@ -58,7 +58,6 @@ process_input <- function(counts, ids = NULL, img_path = NULL, separate_by = "x"
     if(ncol(ids) != 2){
       stop("ids must contain two columns (X and Y)")
     }
-    
     if(nrow(ids) < nrow(counts)){
       stop("ids does not have enough rows to contain spatial information for all spots in counts.")
     }
@@ -71,30 +70,15 @@ process_input <- function(counts, ids = NULL, img_path = NULL, separate_by = "x"
     }
   }
   if(!is.null(img_path)){
-	  img <- read_image(img_path)
+	  img <- read_image(img_path, hw = img_size)
   }else{
 	  img <- NULL
   }
  
   # prepare either input ids or convert rownames to ids data frame
   if(!is.null(ids)){
-    if(is.null(colnames(ids)) || !all(colnames(ids) == c("X", "Y"))){ 
-      # reorder the ids data frame to have x-coordinates in second and
-      # y-coordinate in first column
-      input.ids <- ids
-      r1 <- range(ids[,1])
-      r2 <- range(ids[,2])
-      if( (r1[2] - r1[1]) > (r2[2] - r2[1]) ){
-        x_ind <- 1
-        y_ind <- 2
-      }else if( (r1[2] - r1[1]) < (r2[2] - r2[1]) ){
-        x_ind <- 2
-        y_ind <- 1
-      }else{
-        stop("Dimension of a ST slide is 34x32. X and Y in the id matrix have the same dimension.")
-      }
-      ids <- data.frame(Y = input.ids[, y_ind], X = input.ids[, x_ind])
-      rownames(ids) <- rownames(input.ids)
+    if(is.null(colnames(ids)) || !all(colnames(ids) %in% c("X", "Y"))){ 
+    	stop("ids needs to have columns X and Y.") 
     }
   }else{
     # extract ids from rownames of counts and create a data frame
@@ -115,34 +99,15 @@ process_input <- function(counts, ids = NULL, img_path = NULL, separate_by = "x"
     r2 <- range(coords2)
     if( (r1[2] - r1[1]) > (r2[2] - r2[1]) ){
       ids <- data.frame(Y = coords2, X = coords1)
-    }else if( (r1[2] - r1[1]) < (r2[2] - r2[1]) ){
-      ids <- data.frame(Y = coords1, X = coords2)
     }else{
-      stop("Dimension of a ST slide is 34x32. X and Y in the id matrix have the same dimension.")
+      ids <- data.frame(Y = coords1, X = coords2)
     }
     rownames(ids) <- rownames(counts)
   }
-  if(max(ids[,"X"]) > 34){
-	  ids[,"X"] <- ids[,"X"] + (34 - max(ids[,"X"]))
-  }
-  if(max(ids[,"Y"]) > 32){
-	  ids[,"Y"] <- ids[,"Y"] + (32 - max(ids[,"Y"]))
-  }
-  ids <- fill_ids(ids)
-if(! all(range(ids) == c(2,34) && !force_indices) ){
-      stop("The range of indices in ids does not match typical ST barcode files (index range 2 - 34). 
-           Set force_indices = TRUE to proceed anyways. This might lead to unexpected behaviour.")
-    }
-
+  
   # adjust coordinates for compatibility 
   # with the package if possible
-  ids[,"X"] <- ids[,"X"] + (2 - min(ids[,"X"]))
-  ids[,"Y"] <- ids[,"Y"] + (2 - min(ids[,"Y"]))
- 
-  if(!all(range(ids[,"Y"]) == c(2, 32)) || !all(range(ids[,"X"]) == c(2,34)) ){
-    stop("Could not adjust data to conform to package standards. Please check your input.")
-  }
-
+  
   # deal with potential duplicates
   if(!is.null(dup.sep)){
     gene.names <- strsplit(colnames(counts), split = dup.sep)
@@ -160,7 +125,7 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
   }
   
   
-  # find all duplicate names, iterate over them, sum them up and remove superfluous columns
+  # find all duplicate names, sum them up and remove superfluous columns
   if(sum(duplicated(colnames(counts))) > 0){
     dup.genes <- unique(colnames(counts)[duplicated(colnames(counts))])
     if(verbose) cat("Duplicates found for ", length(dup.genes), " genes.\nRemoving...\n")
@@ -175,16 +140,13 @@ if(! all(range(ids) == c(2,34) && !force_indices) ){
   
   # remove spots with exceptionally low number of expressed genes
   n.genes <- apply(counts, 1, function(x) sum(x>0))
-  if(any(n.genes <= 100)){
-    counts <- counts[-which(n.genes < 100),]
+  if(any(n.genes <= n.gene.cutoff)){
+    counts <- counts[-which(n.genes < n.gene.cutoff),]
   }
   
   # normalization with sctransform
-  if(normalize){
-    counts.normalized <- normalize_counts(counts)
-  }else{
-    counts.normalized <- NULL
-  }
+  
+  counts.normalized <- normalize_counts(counts)
   
   return(list(counts = counts, ids = ids, img = img, counts.normalized = counts.normalized))
 }

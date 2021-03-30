@@ -2,8 +2,6 @@
 #' Manual checking of the result and adjustment of the threshold is needed.
 #' 
 #' @param img image of the ST slide, cropped to the spot area. image read by EBimage::readImage()
-#' @param nx number of spots shown in the image on the horizontal axis
-#' @param ny number of spots shown in the image on the vertical axis
 #' @param ids data frame assigning barcodes / spot names to spatial coordinates
 #' @param counts non-negative numeric matrix containing gene counts, 
 #' rows correspond to spots, columns correspond to genes
@@ -24,25 +22,24 @@
 #' 5) brightness.plot density plot of brightness values, fits for two groups and decision boundary for dividing tissue and background
 #' @export
 
-remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold = 0.7, plot.params = NULL, force.manual = FALSE){
-  if(!is.null(img)){
+remove_background <- function(img, ids, counts, threshold = 0.7, plot.params = NULL, force.manual = FALSE){
     # reduce to one pixel per spot
     img <- EBImage::channel(img, "gray")
-    img <- EBImage::resize(img, 1000, 1000)
-    
-  
+    dim_x <- dim(img)[1]
+    dim_y <- dim(img)[2]
+     
     if(!is.null(plot.params)){
       nx <- plot.params$nx
       ny <- plot.params$ny
       ox <- plot.params$ox
       oy <- plot.params$oy
-      dx <- (1000-2*ox)/nx
-      dy <- (1000-2*oy)/ny
+      dx <- (dim_x-2*ox)/nx
+      dy <- (dim_y-2*oy)/ny
   
       ox1 <- as.integer(ox)
-      ox2 <- as.integer(1000-ox)
+      ox2 <- as.integer(dim_x-ox)
       oy1 <- as.integer(oy)
-      oy2 <- as.integer(1000-oy)
+      oy2 <- as.integer(dim_y-oy)
   
       img <- img[ox1:ox2, oy1:oy2]
     }
@@ -62,67 +59,69 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
         EBImage::imageData(img.reduced)[x,y] <- mean(EBImage::imageData(img.reduced)[x.neighbours, y.neighbours])
       }
     }
-    
+    # rescale brightness values to max 1
     EBImage::imageData(img.reduced) <- EBImage::imageData(img.reduced) / max(EBImage::imageData(img.reduced))
   
     # select the spots to remove
     brightness.values <- as.vector(EBImage::imageData(img.reduced))
     if(!force.manual){
-    em.result <- mclust::Mclust(data = brightness.values, G = 2, modelNames = "V")
+    	em.result <- mclust::Mclust(data = brightness.values, G = 2, modelNames = "V")
     
-    # get solution for best split
-    means <- em.result$parameters$mean
-    sds <- em.result$parameters$variance$sigmasq
-    pros <- em.result$parameters$pro
+    	# get solution for best split
+    	means <- em.result$parameters$mean
+    	sds <- em.result$parameters$variance$sigmasq
+    	pros <- em.result$parameters$pro
     
-    f <- function(x){
-      return(pros[1] * dnorm(x, means[1], sqrt(sds[1])) - pros[2] * dnorm(x, means[2], sqrt(sds[2])))
-    }
+    	f <- function(x){
+    		return(pros[1] * dnorm(x, means[1], sqrt(sds[1])) - pros[2] * dnorm(x, means[2], sqrt(sds[2])))
+    	}
 
-    is.between <- function(x1, x2, y){
-      if((y > x1 && y < x2) || (y > x2 && y < x1)){
-        return(TRUE)
-      }else{
-        return(FALSE)
-      }
-    }
+    	is.between <- function(x1, x2, y){
+      		if((y > x1 && y < x2) || (y > x2 && y < x1)){
+        		return(TRUE)
+      		}else{
+        		return(FALSE)
+      		}
+    	}
     
-    x0 <- cmna::bisection(f, means[1], means[2],tol = 1e-5, m = 10000)
-    if(!is.between(means[1], means[2], x0) || abs(f(x0) > 0.01)){
-      x0 <- threshold
-    }else{
-      cat("Brightness Threshold determined by EM: ", x0, "\n")
-    }
+	# get point of equal likelihood
+    	x0 <- cmna::bisection(f, means[1], means[2],tol = 1e-5, m = 10000)
+    	if(!is.between(means[1], means[2], x0) || abs(f(x0) > 0.01)){
+      		x0 <- threshold
+    	}else{
+     		cat("Brightness Threshold determined by EM: ", x0, "\n")
+    	}
     
-    dist1 <- pros[1] * dnorm(x = seq(0,1,by = 0.01), mean = means[1], sd = sqrt(sds[1]))
-    dist2 <- pros[2] * dnorm(x = seq(0,1,by = 0.01), mean = means[2], sd = sqrt(sds[2]))
-    brightness.df <- data.frame(
-      brightness = rep(seq(0,1,by = 0.01), 3), 
-      density = c(dist1, dist2, density(brightness.values, n = 101, from = 0, to = 1)$y),
-      curve = c(rep("group1", 101), rep("group2", 101), rep("real", 101))
-    )
+    	dist1 <- pros[1] * dnorm(x = seq(0,1,by = 0.01), mean = means[1], sd = sqrt(sds[1]))
+    	dist2 <- pros[2] * dnorm(x = seq(0,1,by = 0.01), mean = means[2], sd = sqrt(sds[2]))
+    	brightness.df <- data.frame(
+      		brightness = rep(seq(0,1,by = 0.01), 3), 
+      		density = c(dist1, dist2, density(brightness.values, n = 101, from = 0, to = 1)$y),
+      		curve = c(rep("group1", 101), rep("group2", 101), rep("real", 101))
+    	)
     
-    brightness.plot <- ggplot(brightness.df, 
+    	brightness.plot <- ggplot(brightness.df, 
                               aes(
                                 x = brightness, 
                                 y = density, 
                                 group = curve, 
                                 col = curve)
                               ) + 
-      geom_line() +
-      geom_vline(xintercept = x0, col = "black") +
-      ggtitle("Brightness distribution, fits and threshold")
+      	geom_line() +
+      	geom_vline(xintercept = x0, col = "black") +
+      	ggtitle("Brightness distribution, fits and threshold")
     }else{
+	# in case EM is disabled
 	x0 <- threshold
-	brightness.density <- as.data.frame(density(brightness.values, n = 101, from = 0, to = 1)[1:2])
-    	brightness.plot <- ggplot(brightness.density, aes(x = x, y = y)) +
+	brightness.density <- density(brightness.values, n = 101, from = 0, to = 1)
+    	brightness.plot <- ggplot(aes(x = brightness.density$x, y = brightness.density$y)) +
 		geom_line() +
 		ggtitle("Brightness distribution and threshold") +
 		xlab("Brightness") +
 		ylab("Density") +
 		geom_vline(xintercept = x0, col = "black")
     }
-    
+    # cut the image
     EBImage::imageData(img.reduced)[EBImage::imageData(img.reduced) > x0] <- 1
     to.remove <- t(matrix(EBImage::imageData(img.reduced) == 1, nrow=nx))
     
@@ -146,6 +145,8 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
         }
       }
     }
+
+
     if(!is.null(ids) && !is.null(names)){
       spots <- sapply(names,
                       function(x){
@@ -159,6 +160,8 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
       spots <- names(spots)[spots]
       spots.to.keep <- spots
     }
+
+
     ids.reduced <- ids[spots,]
     ids.reduced <- clean_ids(ids.reduced)
     spots.to.keep <- rownames(ids.reduced)
@@ -166,16 +169,19 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
     # tSNE embedding
     tsne <- Rtsne::Rtsne(counts, check_duplicates = F)$Y
     # create comparatively large number of clusters
-    clustering <- cluster::pam(tsne, 15)$clustering
+    clustering <- cluster::pam(tsne, 20)$clustering
     names(clustering) <- rownames(counts)
   
     # keep all clusters with a certain amount of spots in spots.to.keep
+    # quality control: discard spots too similar to background
     clusters.to.keep <- c()
     for(cl in unique(clustering)){
-      if(sum(names(clustering[clustering == cl]) %in% spots.to.keep) > 0.75 * length(which(clustering == cl))){
+      if(sum(names(clustering[clustering == cl]) %in% spots.to.keep) > 0.6 * length(which(clustering == cl))){
         clusters.to.keep <- c(clusters.to.keep, names(clustering[clustering == cl]))
       }
     }
+    # remove spots that are not part of the tissue according to brightness cutoff
+    clusters.to.keep <- intersect(clusters.to.keep, spots.to.keep)
   
     # vector containing background information by clustering
     background.vec <- rep("background", nrow(counts))
@@ -203,41 +209,7 @@ remove_background <- function(img = NULL, nx = 35, ny=33, ids, counts, threshold
       ids.reduced <- ids[clusters.to.keep,]
       ids.reduced <- clean_ids(ids.reduced)
     }
-    clusters.to.keep <- rownames(ids.reduced)
-  }else{
-	  # if no image available
-	  # cluster all spots using pam on tSNE embedding
-	  tsne <- Rtsne::Rtsne(counts, check_duplicates = F)$Y
-	  clustering <- cluster::pam(tsne, 20)$clustering
-	  clustering.coarse <- cluster::pam(counts, 2)$clustering
-
-	  # try to find a cutoff for total library size and/or entropy
-	  # to identify background spot
-	  
-	  # identify clusters with relatively low total expression per spot
-	  clust.mean.exp <- sapply(unique(clustering), function(x){mean(rowSums(counts[which(clustering == x),]))})
-	  clusters <- unique(clustering)[which(clust.mean.exp < summary(clust.mean.exp)[4])]
-
-	  # if the majority of spots within one of the coarse clusters is in the clusters with low expression, remove it
-	  if(length(which(clustering[which(clustering.coarse == 1)] %in% clusters)) / length(which(clustering.coarse == 1)) > 0.8 && length(which(clustering.coarse[which(clustering %in% clusters)] == 1)) / length(which(clustering %in% clusters)) > 0.9){
-		  spots.to.keep <- rownames(counts)[-which(clustering.coarse == 1)]
-	  }else{
-		 if(length(which(clustering[which(clustering.coarse == 2)] %in% clusters)) / length(which(clustering.coarse == 2)) > 0.8 && length(which(clustering.coarse[which(clustering %in% clusters)] == 2)) / length(which(clustering %in% clusters)) > 0.9){
-			 spots.to.keep <- rownames(counts)[-which(clustering.coarse == 2)]
-		 } 
-	  }
-	  background.vec <- rep(0, nrow(counts))
-	  names(background.vec) <- rownames(counts)
-	  background.vec[spots.to.keep] <- 1
-	  background.vec <- as.factor(!as.logical(background.vec))
-	  df <- data.frame(tsne, background.vec)
-	  colnames(df) <- c("tSNE1", "tSNE2", "background")
-  	p <- ggplot(df, aes(x = tSNE1, y = tSNE2, col = background)) + geom_point()
-  	p.bg <- NULL
-  	p.bg.temp <- NULL
-
-	  clusters.to.keep <- spots.to.keep
-  }
+    clusters.to.keep <- rownames(ids.reduced) 
 
   return(list(
     spots.to.keep = spots.to.keep, 
