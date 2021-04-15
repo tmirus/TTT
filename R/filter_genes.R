@@ -25,16 +25,20 @@ filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.w
     if(any(rownames(differential.genes) %in% specific.genes)){
         differential.genes <- differential.genes[which(rownames(differential.genes) %in% specific.genes),]
     }
-    if(verbose) cat(nrow(differential.genes), " genes in intersect of differential and specific genes\n", sep = "")
+    #if(verbose) cat(nrow(differential.genes), " genes in intersect of differential and specific genes\n", sep = "")
     # genes in data frame are already in order
+    if(nrow(differential.genes) == 0){
+	    return(NULL)
+    }
 
     # create two or three gene lists
     # in all lists genes are in same order, but their assigned scores represent
     # their position in the ranking of that score
     # total ranking is the sum of all rankings
     dsg_ranks <- 1:nrow(differential.genes)
+    #print(str(differential.genes))
     names(dsg_ranks) <- rownames(differential.genes)
-    
+    #print(str(dsg_ranks))
     specific.ranks <- 1:length(dsg_ranks)
     names(specific.ranks) <- names(sort(entropies[names(dsg_ranks)]))
     specific.ranks <- specific.ranks[names(dsg_ranks)]
@@ -49,7 +53,7 @@ filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.w
 	    }else{
 		    if(!is.null(counts) && !is.null(ids)){
 			    if(verbose) cat("Calculating lasso models for ", length(dsg_ranks), " genes...\n", sep = "")
-		    	lasso.data <- build_lassos(counts[, names(dsg_ranks)], ids, "", NULL, ncores, gamma)
+		    	lasso.data <- build_lassos(counts[, names(dsg_ranks), drop = FALSE], ids, "", NULL, ncores, gamma)
 		    }
 	    }
     }
@@ -74,10 +78,20 @@ filter_genes <- function(differential.genes, entropies, lasso.data = NULL, deg.w
   	      if(verbose) cat(nrow(differential.genes), " genes passed lls threshold\n", sep = "")
         }
     }
-    
+    if(nrow(differential.genes) == 0){
+	return(NULL)
+    } 
+    #print(str(names(ranks)))
+    #print(str(rownames(differential.genes)))
+    #print(intersect(names(ranks), rownames(differential.genes)))
+
     ranks <- ranks[which(names(ranks) %in% rownames(differential.genes))]
     differential.genes <- differential.genes[names(ranks),]
     
+    #print(str(lls))
+    #print(str(ranks))
+    #print(str(differential.genes))
+
     if(!is.null(lasso.data)){
         differential.genes <- cbind(rank = 1:nrow(differential.genes), differential.genes, lls = lls[names(ranks)], entropy = entropies[names(ranks)])
     }else{

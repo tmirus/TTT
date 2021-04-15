@@ -23,7 +23,7 @@
 #' @param verbose logical, default TRUE
 #' @return list with 2 entries:\cr
 #' 1) differential genes - data frame containing information (name, ckuster, p-value, up-/downregulation) for differentially expressed genes. Ordered by gene rank.\cr
-#' 2) gene.cluster.table - data frame containing for each gene in differential.genes the p-value for differential expression in each cluster
+#' 2) lasso_data
 #' @export
 
 analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso.data = NULL, deg.weight = 2, lls.weight = 3, entropy.weight = 1, build.lasso = FALSE, gamma = 3, ncores = 4, reduce = TRUE, normalize = FALSE, verbose = TRUE){
@@ -82,13 +82,16 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
     	specific <- specific[-which(is.na(specific))]
     }
     
-    if(reduce){
-      # keep only genes with entropy smaller or equal to the mean value
-      specific <- specific[which(specific <= summary(specific)[4])]
-      if(verbose) cat(length(specific), " genes passed entropy threshold\n", sep = "")
-    }else{
-      if(verbose) cat(length(which(specific <= summary(specific)[3])), " genes below mean entropy\n", sep = "")
-    }
+    pdf("entropies.pdf")
+    hist(specific, breaks = 100)
+    dev.off()
+    #if(reduce){
+    #  # keep only genes with entropy smaller or equal to the mean value
+    #  specific <- specific[which(specific <= summary(specific)[4])]
+    #  if(verbose) cat(length(specific), " genes passed entropy threshold\n", sep = "")
+    #}else{
+    #  if(verbose) cat(length(which(specific <= summary(specific)[3])), " genes below mean entropy\n", sep = "")
+    #}
 
 
     if(verbose) cat("testing for differential gene expression...\t")
@@ -96,24 +99,17 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
     # test each cluster against all other clusters at the same time
     
     # normalize counts if required
-    if(normalize){
+    if(normalize && !any(counts < 0)){
 	    deg.counts <- normalize_counts(counts)
     }else{
 	    deg.counts <- counts
     }
     
     test.results <- list()
-    for(cl in rownames(cluster.libs)){
-        # create temporary count matrix (transposed for multtest) and class labels
-	      temp.counts <- t(deg.counts[c(which(clustering == cl),which(clustering != cl)),])
-        labs <- c(rep(0,length(which(clustering == cl))), rep(1,length(which(clustering != cl))))
-        
-	      # calculate t-scores, p-values and adjust
-        t.scores <- multtest::mt.teststat(temp.counts, labs, test = "t")
-        p.vals <- 2 * pt(abs(t.scores), length(labs) - 2, lower.tail = FALSE)
-        p.vals <- p.adjust(p.vals, method = "BH")
-        names(p.vals) <- rownames(temp.counts)
-
+    
+        p.vals <- sapply(colnames(deg.counts), function(g, count.mat = deg.counts, labs = as.factor(clustering)){
+    		summary(aov(count.mat[, g] ~ labs))[[1]][5][1,1]
+    	}) 
         # if test not possible. set the genes p-value to 1 (max)
         if(any(is.na(p.vals))){
             p.vals[is.na(p.vals)] <- 1
@@ -123,15 +119,15 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
         }
         # sort and store
         p.vals <- sort(p.vals)
-        test.results[[cl]] <- p.vals
-    }
+    
     if(verbose) cat("done\n")
 
     # right now all.genes is actually all genes, but if a significance cutoff
     # were used above, this would be needed
-    all.genes <- as.vector(sapply(test.results, function(x){names(x)}))
+    #all.genes <- as.vector(sapply(test.results, function(x){names(x)}))
+    all.genes <- names(p.vals)
     if(any(is.na(all.genes)))
-      all.genes <- all.genes[!is.na(all.genes)]
+    all.genes <- all.genes[!is.na(all.genes)]
     all.genes <- unique(all.genes)
 
     if(verbose) {
@@ -140,88 +136,28 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
     }
     # sort the clustering vector to have consistent order
     clusters <- sort(unique(clustering))
-    # create a table with genes' p-value per cluster
-    gene.table <- matrix(1, ncol = length(clusters), nrow = length(all.genes))
-    rownames(gene.table) <- all.genes
-    colnames(gene.table) <- clusters
-    #gene.table <- c()
-    for(g in all.genes){
-        cluster.values <- c()
-        for(cl in clusters){
-    	    # if the gene is present in test results for the cluster add the value
-    	    # else add 1
-            p.val <- test.results[[cl]][g]
-            if(!is.na(p.val)){
-                gene.table[g, cl] <- as.numeric(p.val)
-            }
-        }
+    
+    if(reduce){
+    	p.vals <- p.vals[p.vals <= sig.level]
     }
 
-    # remove genes above significance threshold / with p-value NA in any cluster
-    to.remove <- c()
-    for(i in 1:nrow(gene.table)){
-        if(is.na(min(gene.table[i,]))){
-            gene.table[i, which(is.na(gene.table[i,]))] <- 1
-        }
-      if(reduce && min(gene.table[i,]) > sig.level){
-          to.remove <- c(to.remove, i)
-        }
-        
-    }
-    if(length(to.remove) > 0){
-        gene.table <- gene.table[-to.remove,]
-    }
-    
-    # order table by minimum p-value for each gene
-    gene.table <- gene.table[order(apply(gene.table, 1, min)),]
-   
     # reduced information to minimum p-value, corresponding cluster, gene name and up/downregulation info
     gene.info <- c()
-    for(i in 1:nrow(gene.table)){
-        g <- rownames(gene.table)[i]
-        p <- min(gene.table[i,])
+    for(i in 1:length(p.vals)){
+        g <- names(p.vals)[i]
+        p <- p.vals[i]
   	
         # assign genes to downregulated clusters only if that gene's mean expression in the 
         # remaining clusters is closer to the expression in the upregulated than in the 
         # downregulated cluster
         regulations <- sapply(clusters, function(cl){mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g])})
-      	# signs to p-values to indicate up- and down-regulation
-        p.vals <- sign(regulations) * gene.table[i,]
-    	
-        if(any(p.vals < 0)){
-          # determine max up-regulated cluster
-      		p.vals.temp <- p.vals
-      		p.vals.temp[p.vals < 0] <- 1
-      		up.max <- which.min(p.vals.temp)
-      
-      		# determine max down-regulated cluster
-      		p.vals.temp <- p.vals
-      		p.vals.temp[p.vals > 0] <- -1
-      		down.max <- which.max(p.vals.temp)
-    	  }else{
-      		up.max <- which.min(p.vals)
-      		down.max <- NULL
-    	  }
-    
-      	if(is.null(down.max) | length(clusters) <= 2){
-      		cl <- clusters[up.max]
-      	}else{
-      	  # mean gene expression in all clusters that are not up.max or down.max
-        		means <-  sapply(clusters, function(cl){mean(counts[which(clustering == cl),g])})
-        		if(abs(mean(means[-c(down.max, up.max)]) - means[up.max]) < abs(mean(means[-c(down.max, up.max)]) - means[down.max])){
-        			cl <- clusters[down.max]
-        		}else{
-        			cl <- clusters[up.max]
-        		}
-    	  }
       	
-    	 if(length(cl) > 0){
-      		# up-/downregulation
-        	reg <- sign(mean(counts[which(clustering == cl),g]) - mean(counts[which(clustering != cl), g]))
-        	gene.info <- rbind(gene.info,
-                	           c(g, cl, p, reg)
-        	                   )
-      }
+      	 cl <- clusters[which.max(regulations)]
+    	
+        reg <- 1	
+	gene.info <- rbind(gene.info,
+                	   c(g, cl, p, reg)
+        	          )
     }
     # coerce to data frame, name columns and adjust variable types
     gene.info <- as.data.frame(gene.info)
@@ -235,6 +171,7 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
       if(reduce) cat(nrow(gene.info), " genes passed the significance threshold\n", sep = "")
       else cat(sum(gene.info$pVal < sig.level), " genes below significance threshold\n", sep = "")
     }
+
     gene.info <- filter_genes(
       gene.info, 
       specific, 
@@ -250,10 +187,10 @@ analyze_clustering <- function(counts, ids, clustering, sig.level = 0.001, lasso
       reduce = reduce,
       verbose = verbose
       )
+    if(is.null(gene.info)) return(NULL)
 
     return(list(
         differential_genes = gene.info$diff.genes,
-        gene.cluster.table = gene.table[rownames(gene.info$diff.genes),],
-        lasso.data = gene.info$lasso
+        lasso_data = gene.info$lasso
 	))
 }
