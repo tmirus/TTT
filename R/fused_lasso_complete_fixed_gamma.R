@@ -19,9 +19,13 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
     tmp_fits_set <- c()
     BICs_set <- c()
     lls_set <- c()
+    lambdas <- c()
 
     # not all genes can be used
     to.remove <- c()
+
+    # create adjacency matrix
+      adj.mat <- create_graph(rownames(counts_matrix), ids_table)
 
     # serial calculation of models for all genes in counts_matrix
     for (k in seq_len(length(gene_list))) {
@@ -29,12 +33,17 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
       # create a 2D matrix (x and y information) for each gene for use with genlasso
       # y in rows, x in columns (by our definition)
       
-      # create adjacency matrix
-      adj.mat <- create_graph(rownames(counts_matrix), ids_table)
+            # full solution path calculation
+      tmp_lasso <- try({genlasso::fusedlasso(y = counts_matrix[,i], graph = adj.mat, gamma = gamma, approx=FALSE)})
+      # catch an error that might occur in dualpathFusedL1
+      if(class(tmp_lasso) == "try-error") {
+	      cat("Error in lasso calculation for ", i, "\n")
+	      gene_vec <- counts_matrix[,i]
+	      gene_name <- i
+	      save(gene_vec, gene_name, adj.mat, file = paste0("lasso_error_", as.character(Sys.time()), ".rda"))
+	      next
+      }
 
-      # full solution path calculation
-      tmp_lasso <- genlasso::fusedlasso(y = counts_matrix[,i], graph = adj.mat, gamma = gamma, approx=FALSE)
-      
       # calculate BICs for all possible models
       BIC_list <- calc_BICs(tmp_lasso)
 
@@ -48,8 +57,10 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
         # coef_error catches truncation errors and 
         # uses a different but similar lambda
         fits <- coef_error(tmp_lasso, lambda=lambda_BIC)
+	
         tmp_fit <- fits$beta
-
+	lambdas <- append(lambdas, fits$lambda)
+	
         # contains the count models (Y)
         tmp_fits_set <- cbind(tmp_fits_set,tmp_fit)
         
@@ -80,6 +91,7 @@ fused_lasso_complete_fixed_gamma <- function(counts_matrix, ids_table, name, out
     }
     return(list(counts = tmp_fits_set,
                 BICs = BICs_set, 
-                lls = lls_set)
+                lls = lls_set,
+		lambdas = lambdas)
            )
 }

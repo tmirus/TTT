@@ -26,6 +26,8 @@ build_lassos <- function(counts,ids,name,output_folder = NULL,ncores=4,gamma=1){
     # select genes randomly for each thread to balance the load
     genes <- colnames(counts)
     gene_list <- vector(mode = "list", length = ncores)
+
+    ncores <- min(ncores, ncol(counts))
     # if more than one core is used, distribute genes
     if(ncores > 1){
         genes.per.thread <- as.integer(ncol(counts) / ncores) 
@@ -49,19 +51,26 @@ build_lassos <- function(counts,ids,name,output_folder = NULL,ncores=4,gamma=1){
                                ),
                            mc.cores = ncores
                            )
-    
+
     rnames <- rownames(counts)
     # reconstruct the counts matrix and store additional information 
     # returned by fused_lasso_complete_fixed_gamma
     counts <- c()
     BICs <- c()
     lls <- c()
+    lambdas <- c()
+
     for(i in 1:length(lasso.data)){
-        if(length(lasso.data) > 0){
+        if(length(lasso.data[[i]]) > 0 && !class(lasso.data[[i]]) == "try-error"){
             counts <- cbind(counts, lasso.data[[i]]$counts)
             BICs <- append(BICs, lasso.data[[i]]$BICs)
             lls <- append(lls, lasso.data[[i]]$lls)
-        }
+	    lambdas <- append(lambdas, lasso.data[[i]]$lambdas)
+        }else{
+		print(lasso.data[[i]])
+		print(str(lasso.data[[i]]))
+		warning("One job did not return valid lasso results. Missing models for all genes assigned to this job.")
+	}
     }
     rownames(counts) <- rnames
     
